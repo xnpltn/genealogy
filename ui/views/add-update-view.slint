@@ -1,0 +1,15 @@
+export component Header inherits Rectangle {
+    y: 5px;
+    preferred-width: 100%;
+    height: 30px;
+    background: green;
+}
+
+export component AddUpdateView inherits Rectangle {
+    min-width: 400px;
+    preferred-height: 100%;
+    preferred-width: 100%;
+    background: blue;
+
+    Header { }
+}

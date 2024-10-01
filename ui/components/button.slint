@@ -1,0 +1,10 @@
+import { Button } from "std-widgets.slint";
+export component CustomButton inherits Rectangle {
+    in property <string> title;
+    border-color: red;
+    border-radius: 5px;
+
+    Button {
+        text: "My Button";
+    }
+}

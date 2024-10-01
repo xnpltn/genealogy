@@ -1,0 +1,12 @@
+import { CustomButton } from "components/button.slint";
+import { AddUpdateView} from "views/add-update-view.slint";
+import { TabsView } from "views/tabs-view.slint";
+export component Main inherits Window {
+    min-width: 800px;
+    min-height: 600px;
+    HorizontalLayout {
+        AddUpdateView { }
+
+        TabsView { }
+    }
+}
