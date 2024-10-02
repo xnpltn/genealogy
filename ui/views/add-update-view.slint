@@ -1,8 +1,47 @@
+  
+import { CustomButton } from "../components/button.slint";
+import { Button, CheckBox, Switch, HorizontalBox, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox } from "std-widgets.slint";
 export component Header inherits Rectangle {
+    in-out property <bool> dark-mode;
     y: 5px;
     preferred-width: 100%;
-    height: 30px;
-    background: green;
+    height: 50px;
+    background: self.dark-mode ? black : white;
+
+    HorizontalLayout {
+        alignment: space-between;
+        Rectangle {
+            background: white;
+            border-radius: 5px;
+            width: parent.width / 2;
+            Text {
+                text: "Add / Update";
+                font-size: 18px;
+            }
+        }
+
+        Rectangle {
+            background: transparent;
+            border-radius: 5px;
+            width: parent.width / 2;
+            HorizontalLayout {
+                alignment: space-between;
+                CustomButton {
+                    background-color: transparent;
+                    title: "Settings";
+                }
+
+                CustomButton {
+                    background-color: transparent;
+                    title: "About";
+                }
+
+                Switch {
+                    text: @tr("Dark Mode");
+                }
+            }
+        }
+    }
 }
 
 export component AddUpdateView inherits Rectangle {
@@ -12,4 +51,100 @@ export component AddUpdateView inherits Rectangle {
     background: blue;
 
     Header { }
+
+    Rectangle {
+
+        y: 60px;
+        preferred-width: 100%;
+        Text {
+            text: "hello wolrd";
+        }
+
+        GroupBox {
+            x: 0;
+            y: 0;
+            HorizontalLayout {
+                alignment: space-between;
+                VerticalLayout {
+                    HorizontalBox {
+                        alignment: start;
+                        padding: 0px;
+                        LineEdit {
+                            height: 30px;
+                            placeholder-text: "Fist Name";
+                        }
+
+                        LineEdit {
+                            height: 30px;
+                            placeholder-text: "Middle Name";
+                        }
+
+                        LineEdit {
+                            height: 30px;
+                            placeholder-text: "Last Name";
+                        }
+                    }
+
+                    HorizontalBox {
+                        alignment: start;
+                        padding: 0px;
+                        ComboBox {
+                            model: [@tr("Select Sex"), @tr("Male"), @tr("Female"), @tr("Other")];
+                        }
+
+                        Button {
+                            text: @tr("Bithday");
+                            clicked => {
+                                birthday-picker.show();
+                            }
+                        }
+
+                        Button {
+                            text: @tr("Died");
+                            clicked => {
+                                died-picker.show();
+                            }
+                        }
+
+                        Rectangle {
+                            height: 20px;
+                            width: 30px;
+                            Text {
+                                text: "age";
+                                color: white;
+                            }
+                        }
+                    }
+                }
+
+                VerticalBox {
+
+                    alignment: end;
+                    Rectangle {
+                        height: 300px;
+                        width: 300px;
+                        background: red;
+                        Text {
+                            text: "Image";
+                        }
+                    }
+
+                    CustomButton {
+                        background: red;
+                        title: "Upload Photo";
+                    }
+                }
+            }
+        }
+    }
+
+    birthday-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+    }
+
+    died-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+    }
 }

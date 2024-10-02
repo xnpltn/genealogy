@@ -1,8 +1,62 @@
 
 
+import { TabWidget, VerticalBox, GroupBox, HorizontalBox, Button, CheckBox } from "std-widgets.slint";
 export component TabsView inherits Rectangle {
     min-width: 400px;
     preferred-height: 100%;
     preferred-width: 100%;
     background: red;
+    TabWidget {
+        preferred-width: 100%;
+        preferred-height: 100%;
+        Tab {
+            title: @tr("Relatives");
+
+            VerticalBox {
+                alignment: start;
+
+                GroupBox {
+                    title: @tr("Content of tab 1");
+
+                    HorizontalBox {
+                        alignment: start;
+
+                        Button {
+                            text: @tr("Click me");
+                        }
+                    }
+                }
+            }
+        }
+
+        Tab {
+            title: @tr("Females");
+
+            VerticalBox {
+                alignment: start;
+
+                GroupBox {
+                    title: @tr("Content of tab 2");
+
+                    VerticalBox {
+                        alignment: start;
+
+                        CheckBox {
+                            text: @tr("Check me");
+                        }
+                    }
+                }
+            }
+        }
+
+        Tab {
+            title: @tr("Employees");
+
+            VerticalBox {
+                Text {
+                    text: @tr("Content of tab 3");
+                }
+            }
+        }
+    }
 }
