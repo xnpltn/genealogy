@@ -1,0 +1,13 @@
+
+import { StandardTableView } from "std-widgets.slint";
+
+export struct TableData {
+  columns :[TableColumn],
+  rows: [[StandardListViewItem]]
+}
+
+export component Table inherits StandardTableView {
+    in-out property <TableData> data;
+    columns: data.columns;
+    rows: data.rows;
+}

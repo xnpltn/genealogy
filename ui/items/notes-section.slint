@@ -1,0 +1,57 @@
+import { Button, ScrollView, StandardTableView, TabWidget, VerticalBox } from "std-widgets.slint";
+export component NotesSect inherits Rectangle {
+    property <string> active_note: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua...";
+    HorizontalLayout {
+        Rectangle {
+            background: red;
+            TabWidget {
+                Tab {
+                    title: "Files";
+                    Text {
+                        text: "Hello one";
+                    }
+                }
+
+                Tab {
+                    title: "Notes";
+                    Text {
+                        text: "Hello Two";
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            width: parent.width / 2;
+            header := Text {
+                x: parent.width / 2 - self.width;
+                y: 0;
+                text: "Active Note";
+                font-size: 24px;
+            }
+
+            note-container := Rectangle {
+                y: header.height;
+                border-radius: 20px;
+                height: 200px;
+                background: red;
+                VerticalBox {
+                    padding: 20px;
+                    text := Text {
+                        width: 100%;
+                        text: active_note;
+                        wrap: word-wrap;
+                        font-size: 24px;
+                    }
+                }
+            }
+
+            buttons := Rectangle {
+                y: note-container.height;
+                Button {
+                    text: "Hello wolr";
+                }
+            }
+        }
+    }
+}

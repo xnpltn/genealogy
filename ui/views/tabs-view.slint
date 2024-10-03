@@ -1,62 +1,22 @@
 
 
-import { TabWidget, VerticalBox, GroupBox, HorizontalBox, Button, CheckBox } from "std-widgets.slint";
+import { TabWidget, VerticalBox, GroupBox, HorizontalBox, Button, CheckBox , StandardTableView} from "std-widgets.slint";
+import { Tabs } from "../items/tabs.slint";
+import { NotesSect } from "../items/notes-section.slint";
+
 export component TabsView inherits Rectangle {
     min-width: 400px;
     preferred-height: 100%;
     preferred-width: 100%;
-    background: red;
-    TabWidget {
-        preferred-width: 100%;
-        preferred-height: 100%;
-        Tab {
-            title: @tr("Relatives");
 
-            VerticalBox {
-                alignment: start;
-
-                GroupBox {
-                    title: @tr("Content of tab 1");
-
-                    HorizontalBox {
-                        alignment: start;
-
-                        Button {
-                            text: @tr("Click me");
-                        }
-                    }
-                }
-            }
+    VerticalLayout {
+        tabs := Rectangle {
+            Tabs { }
         }
 
-        Tab {
-            title: @tr("Females");
-
-            VerticalBox {
-                alignment: start;
-
-                GroupBox {
-                    title: @tr("Content of tab 2");
-
-                    VerticalBox {
-                        alignment: start;
-
-                        CheckBox {
-                            text: @tr("Check me");
-                        }
-                    }
-                }
-            }
-        }
-
-        Tab {
-            title: @tr("Employees");
-
-            VerticalBox {
-                Text {
-                    text: @tr("Content of tab 3");
-                }
-            }
+        notes := Rectangle {
+            max-height: 300px;
+            NotesSect { }
         }
     }
 }

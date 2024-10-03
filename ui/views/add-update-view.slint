@@ -1,17 +1,15 @@
   
 import { CustomButton } from "../components/button.slint";
-import { Button, CheckBox, Switch, HorizontalBox, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox } from "std-widgets.slint";
+import { Button, CheckBox, Switch, HorizontalBox, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox, Palette } from "std-widgets.slint";
 export component Header inherits Rectangle {
     in-out property <bool> dark-mode;
     y: 5px;
     preferred-width: 100%;
     height: 50px;
-    background: self.dark-mode ? black : white;
 
     HorizontalLayout {
         alignment: space-between;
         Rectangle {
-            background: white;
             border-radius: 5px;
             width: parent.width / 2;
             Text {
@@ -21,23 +19,24 @@ export component Header inherits Rectangle {
         }
 
         Rectangle {
-            background: transparent;
             border-radius: 5px;
             width: parent.width / 2;
             HorizontalLayout {
-                alignment: space-between;
-                CustomButton {
-                    background-color: transparent;
-                    title: "Settings";
+                alignment: end;
+                Button {
+                    text: "Settings";
                 }
 
-                CustomButton {
-                    background-color: transparent;
-                    title: "About";
+                Button {
+                    text: "About";
                 }
 
                 Switch {
                     text: @tr("Dark Mode");
+                    checked: Palette.color-scheme == ColorScheme.dark;
+                    toggled => {
+                        Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
+                    }
                 }
             }
         }
@@ -48,7 +47,6 @@ export component AddUpdateView inherits Rectangle {
     min-width: 400px;
     preferred-height: 100%;
     preferred-width: 100%;
-    background: blue;
 
     Header { }
 
@@ -56,82 +54,129 @@ export component AddUpdateView inherits Rectangle {
 
         y: 60px;
         preferred-width: 100%;
-        Text {
-            text: "hello wolrd";
-        }
 
-        GroupBox {
-            x: 0;
-            y: 0;
-            HorizontalLayout {
-                alignment: space-between;
-                VerticalLayout {
-                    HorizontalBox {
-                        alignment: start;
-                        padding: 0px;
-                        LineEdit {
-                            height: 30px;
-                            placeholder-text: "Fist Name";
-                        }
+        VerticalLayout {
+            Rectangle {
+                background: yellow;
+                GroupBox {
+                    x: 0;
+                    y: 0;
+                    HorizontalLayout {
+                        alignment: space-between;
+                        VerticalLayout {
+                            spacing: 10px;
+                            HorizontalBox {
+                                alignment: start;
+                                padding: 0px;
+                                LineEdit {
+                                    height: 30px;
+                                    placeholder-text: "Fist Name";
+                                }
 
-                        LineEdit {
-                            height: 30px;
-                            placeholder-text: "Middle Name";
-                        }
+                                LineEdit {
+                                    height: 30px;
+                                    placeholder-text: "Middle Name";
+                                }
 
-                        LineEdit {
-                            height: 30px;
-                            placeholder-text: "Last Name";
-                        }
-                    }
+                                LineEdit {
+                                    height: 30px;
+                                    placeholder-text: "Last Name";
+                                }
+                            }
 
-                    HorizontalBox {
-                        alignment: start;
-                        padding: 0px;
-                        ComboBox {
-                            model: [@tr("Select Sex"), @tr("Male"), @tr("Female"), @tr("Other")];
-                        }
+                            HorizontalBox {
+                                alignment: start;
+                                padding: 0px;
+                                ComboBox {
+                                    model: [@tr("Select Sex"), @tr("Male"), @tr("Female"), @tr("Other")];
+                                }
 
-                        Button {
-                            text: @tr("Bithday");
-                            clicked => {
-                                birthday-picker.show();
+                                Button {
+                                    text: @tr("Bithday");
+                                    clicked => {
+                                        birthday-picker.show();
+                                    }
+                                }
+
+                                Button {
+                                    text: @tr("Died");
+                                    clicked => {
+                                        died-picker.show();
+                                    }
+                                }
+
+                                Rectangle {
+                                    height: 20px;
+                                    width: 30px;
+                                    Text {
+                                        text: "age";
+                                    }
+                                }
                             }
                         }
 
-                        Button {
-                            text: @tr("Died");
-                            clicked => {
-                                died-picker.show();
-                            }
-                        }
+                        VerticalBox {
 
-                        Rectangle {
-                            height: 20px;
-                            width: 30px;
-                            Text {
-                                text: "age";
-                                color: white;
+                            alignment: end;
+                            Rectangle {
+                                height: 300px;
+                                width: 300px;
+                                border-radius: 10px;
+                                Text {
+                                    text: "Image";
+                                }
+
+                                background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #d8dee9;
+                            }
+
+                            CustomButton {
+                                title: "Upload Photo";
+                                background: red;
                             }
                         }
                     }
                 }
+            }
 
-                VerticalBox {
-
-                    alignment: end;
-                    Rectangle {
-                        height: 300px;
-                        width: 300px;
-                        background: red;
-                        Text {
-                            text: "Image";
-                        }
+            Rectangle {
+                background: blue;
+                buttonsA := HorizontalLayout {
+                    x: 0;
+                    y: 0;
+                    height: 50px;
+                    spacing: 10px;
+                    alignment: space-around;
+                    Button {
+                        text: @tr("Add Mother");
                     }
 
-                    CustomButton {
+                    Button {
+                        text: @tr("Add Father");
+                    }
+                }
+
+                tables := HorizontalLayout {
+                    x: 0;
+                    y: buttonsA.height;
+                    height: 350px;
+                    Rectangle {
+                        background: green;
+                    }
+
+                    Rectangle {
                         background: red;
-                        title: "Upload Photo";
+                    }
+                }
+
+                HorizontalLayout {
+                    x: 0;
+                    y: tables.height;
+                    Rectangle {
+                        HorizontalLayout {
+                            Button {
+                                text: @tr("Add Child");
+                            }
+                        }
                     }
                 }
             }

@@ -1,12 +1,16 @@
 import { CustomButton } from "components/button.slint";
 import { AddUpdateView} from "views/add-update-view.slint";
 import { TabsView } from "views/tabs-view.slint";
+import { Palette } from "std-widgets.slint";
 export component Main inherits Window {
-    min-width: 800px;
-    min-height: 600px;
+    min-width: 1920px;
+    min-height: 960px;
+    title: "Genealogy App";
     in-out property <bool> dark-mode;
     HorizontalLayout {
-        AddUpdateView { }
+        AddUpdateView {
+            background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #e5e9f0;
+        }
 
         TabsView { }
     }
