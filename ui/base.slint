@@ -2,11 +2,44 @@ import { CustomButton } from "components/button.slint";
 import { AddUpdateView} from "views/add-update-view.slint";
 import { TabsView } from "views/tabs-view.slint";
 import { Palette } from "std-widgets.slint";
+import { TableData } from "types.slint";
+
+export { TableData }
+
 export component Main inherits Window {
     min-width: 1920px;
     min-height: 960px;
     title: "Genealogy App";
     in-out property <bool> dark-mode;
+    in-out property <[[StandardListViewItem]]> rows: [
+        [
+            { text: "Eliza global" },
+            { text: "23" },
+            { text: ".03" },
+            { text: "Unknown" },
+            { text: "Unknown" },
+            { text: "NULL" },
+            { text: "Eliza@doolittle.net" },
+            { text: "True" },
+            { text: "NONE" },
+            { text: "" },
+            { text: "" }
+        ],
+        [
+            { text: "Henrietta Hotty" },
+            { text: "19" },
+            { text: ".02" },
+            { text: "8" },
+            { text: "0" },
+            { text: "3" },
+            { text: "" },
+            { text: "True" },
+            { text: "NONE" },
+            { text: "" },
+            { text: "" }
+        ],
+    ];
+
     HorizontalLayout {
         AddUpdateView {
             background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #e5e9f0;

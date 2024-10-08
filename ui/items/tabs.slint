@@ -1,285 +1,7 @@
 
 import { TabWidget, StandardTableView, GroupBox, VerticalBox } from "std-widgets.slint";
-import { Table , TableData} from "../components/table.slint";
+import { Table } from "../components/table.slint";
 export component Tabs inherits Rectangle {
-    in-out property <[[StandardListViewItem]]> rows: [
-        [
-            { text: "Eliza Doolittle" },
-            { text: "23" },
-            { text: ".03" },
-            { text: "Unknown" },
-            { text: "Unknown" },
-            { text: "NULL" },
-            { text: "Eliza@doolittle.net" },
-            { text: "True" },
-            { text: "NONE" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Paris Hilton" },
-            { text: "22" },
-            { text: ".05" },
-            { text: "Unknown" },
-            { text: "Conrad Hilton" },
-            { text: "304.789.6543" },
-            { text: "Paris@hilton.com" },
-            { text: "False" },
-            { text: "Not Human" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Fiona Apple" },
-            { text: "04" },
-            { text: ".04" },
-            { text: "NULL" },
-            { text: "NULL" },
-            { text: "NULL" },
-            { text: "Fiona@apple.core" },
-            { text: "False" },
-            { text: "Rejected By Them" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Siouxsie Sioux" },
-            { text: "67" },
-            { text: ".03" },
-            { text: "Her Mom" },
-            { text: "Her Dad" },
-            { text: "Unknown" },
-            { text: "Siouxsie@banshee.org" },
-            { text: "False" },
-            { text: "Rejected By Family" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Henrietta Hotty" },
-            { text: "19" },
-            { text: ".02" },
-            { text: "8" },
-            { text: "0" },
-            { text: "3" },
-            { text: "" },
-            { text: "True" },
-            { text: "NONE" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Eliza Doolittle" },
-            { text: "23" },
-            { text: ".03" },
-            { text: "Unknown" },
-            { text: "Unknown" },
-            { text: "NULL" },
-            { text: "Eliza@doolittle.net" },
-            { text: "True" },
-            { text: "NONE" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Paris Hilton" },
-            { text: "22" },
-            { text: ".05" },
-            { text: "Unknown" },
-            { text: "Conrad Hilton" },
-            { text: "304.789.6543" },
-            { text: "Paris@hilton.com" },
-            { text: "False" },
-            { text: "Not Human" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Fiona Apple" },
-            { text: "04" },
-            { text: ".04" },
-            { text: "NULL" },
-            { text: "NULL" },
-            { text: "NULL" },
-            { text: "Fiona@apple.core" },
-            { text: "False" },
-            { text: "Rejected By Them" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Siouxsie Sioux" },
-            { text: "67" },
-            { text: ".03" },
-            { text: "Her Mom" },
-            { text: "Her Dad" },
-            { text: "Unknown" },
-            { text: "Siouxsie@banshee.org" },
-            { text: "False" },
-            { text: "Rejected By Family" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Henrietta Hotty" },
-            { text: "19" },
-            { text: ".02" },
-            { text: "8" },
-            { text: "0" },
-            { text: "3" },
-            { text: "" },
-            { text: "True" },
-            { text: "NONE" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Eliza Doolittle" },
-            { text: "23" },
-            { text: ".03" },
-            { text: "Unknown" },
-            { text: "Unknown" },
-            { text: "NULL" },
-            { text: "Eliza@doolittle.net" },
-            { text: "True" },
-            { text: "NONE" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Paris Hilton" },
-            { text: "22" },
-            { text: ".05" },
-            { text: "Unknown" },
-            { text: "Conrad Hilton" },
-            { text: "304.789.6543" },
-            { text: "Paris@hilton.com" },
-            { text: "False" },
-            { text: "Not Human" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Fiona Apple" },
-            { text: "04" },
-            { text: ".04" },
-            { text: "NULL" },
-            { text: "NULL" },
-            { text: "NULL" },
-            { text: "Fiona@apple.core" },
-            { text: "False" },
-            { text: "Rejected By Them" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Siouxsie Sioux" },
-            { text: "67" },
-            { text: ".03" },
-            { text: "Her Mom" },
-            { text: "Her Dad" },
-            { text: "Unknown" },
-            { text: "Siouxsie@banshee.org" },
-            { text: "False" },
-            { text: "Rejected By Family" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Henrietta Hotty" },
-            { text: "19" },
-            { text: ".02" },
-            { text: "8" },
-            { text: "0" },
-            { text: "3" },
-            { text: "" },
-            { text: "True" },
-            { text: "NONE" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Eliza Doolittle" },
-            { text: "23" },
-            { text: ".03" },
-            { text: "Unknown" },
-            { text: "Unknown" },
-            { text: "NULL" },
-            { text: "Eliza@doolittle.net" },
-            { text: "True" },
-            { text: "NONE" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Paris Hilton" },
-            { text: "22" },
-            { text: ".05" },
-            { text: "Unknown" },
-            { text: "Conrad Hilton" },
-            { text: "304.789.6543" },
-            { text: "Paris@hilton.com" },
-            { text: "False" },
-            { text: "Not Human" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Fiona Apple" },
-            { text: "04" },
-            { text: ".04" },
-            { text: "NULL" },
-            { text: "NULL" },
-            { text: "NULL" },
-            { text: "Fiona@apple.core" },
-            { text: "False" },
-            { text: "Rejected By Them" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Siouxsie Sioux" },
-            { text: "67" },
-            { text: ".03" },
-            { text: "Her Mom" },
-            { text: "Her Dad" },
-            { text: "Unknown" },
-            { text: "Siouxsie@banshee.org" },
-            { text: "False" },
-            { text: "Rejected By Family" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Henrietta Hotty" },
-            { text: "19" },
-            { text: ".02" },
-            { text: "8" },
-            { text: "0" },
-            { text: "3" },
-            { text: "" },
-            { text: "True" },
-            { text: "NONE" },
-            { text: "" },
-            { text: "" }
-        ],
-    ];
-
-    in-out property <[TableColumn]> columns:
-  [
-        { title: "Name" },
-        { title: "Age" },
-        { title: "Sameness" },
-        { title: "Mother" },
-        { title: "Father" },
-        { title: "Phone" },
-        { title: "Email" },
-        { title: "Pinned" },
-        { title: "Lost Reason" },
-        { title: "Created" },
-        { title: "Updated" }
-    ];
-    in-out property <TableData> data: { columns: columns, rows: rows };
     TabWidget {
         preferred-height: 100%;
         Tab {
@@ -295,9 +17,7 @@ export component Tabs inherits Rectangle {
                 alignment: stretch;
                 GroupBox {
                     vertical-stretch: 0;
-                    Table {
-                        data: data;
-                    }
+                    Table { }
                 }
             }
         }
@@ -315,9 +35,7 @@ export component Tabs inherits Rectangle {
                 alignment: stretch;
                 GroupBox {
                     vertical-stretch: 0;
-                    Table {
-                        data: data;
-                    }
+                    Table { }
                 }
             }
         }
@@ -335,9 +53,7 @@ export component Tabs inherits Rectangle {
                 alignment: stretch;
                 GroupBox {
                     vertical-stretch: 0;
-                    Table {
-                        data: data;
-                    }
+                    Table { }
                 }
             }
         }

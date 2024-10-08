@@ -3,19 +3,18 @@ export component NotesSect inherits Rectangle {
     property <string> active_note: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua...";
     HorizontalLayout {
         Rectangle {
-            background: red;
             TabWidget {
                 Tab {
                     title: "Files";
                     Text {
-                        text: "Hello one";
+                        text: "Files";
                     }
                 }
 
                 Tab {
                     title: "Notes";
                     Text {
-                        text: "Hello Two";
+                        text: "Notes";
                     }
                 }
             }
@@ -34,7 +33,7 @@ export component NotesSect inherits Rectangle {
                 y: header.height;
                 border-radius: 20px;
                 height: 200px;
-                background: red;
+                background: greenyellow;
                 VerticalBox {
                     padding: 20px;
                     text := Text {

@@ -4,9 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-surrealdb = "2.0.2"
 slint = "1.7.0"
+sqlx = { version = "0.8.2", features = ["sqlite", "runtime-tokio-native-tls"] }
+tokio = { version = "1.20.0", features = ["full"] }
 
 
 [build-dependencies]
 slint-build = "1.7.0"
+tokio = { version = "1.20.0", features =["full"]}

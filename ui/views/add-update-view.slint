@@ -1,6 +1,7 @@
   
 import { CustomButton } from "../components/button.slint";
-import { Button, CheckBox, Switch, HorizontalBox, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox, Palette } from "std-widgets.slint";
+import { Button, CheckBox, Switch, HorizontalBox, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox, Palette, StandardTableView } from "std-widgets.slint";
+import { TableData } from "../types.slint";
 export component Header inherits Rectangle {
     in-out property <bool> dark-mode;
     y: 5px;
@@ -32,7 +33,7 @@ export component Header inherits Rectangle {
                 }
 
                 Switch {
-                    text: @tr("Dark Mode");
+                    text: @tr("Dark Mode {}", TableData.current_row);
                     checked: Palette.color-scheme == ColorScheme.dark;
                     toggled => {
                         Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
@@ -57,7 +58,6 @@ export component AddUpdateView inherits Rectangle {
 
         VerticalLayout {
             Rectangle {
-                background: yellow;
                 GroupBox {
                     x: 0;
                     y: 0;
@@ -131,7 +131,8 @@ export component AddUpdateView inherits Rectangle {
 
                             CustomButton {
                                 title: "Upload Photo";
-                                background: red;
+                                height: 30px;
+                                background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #d8dee9;
                             }
                         }
                     }
@@ -139,7 +140,6 @@ export component AddUpdateView inherits Rectangle {
             }
 
             Rectangle {
-                background: blue;
                 buttonsA := HorizontalLayout {
                     x: 0;
                     y: 0;
@@ -147,10 +147,12 @@ export component AddUpdateView inherits Rectangle {
                     spacing: 10px;
                     alignment: space-around;
                     Button {
+                        height: 30px;
                         text: @tr("Add Mother");
                     }
 
                     Button {
+                        height: 30px;
                         text: @tr("Add Father");
                     }
                 }
@@ -160,11 +162,33 @@ export component AddUpdateView inherits Rectangle {
                     y: buttonsA.height;
                     height: 350px;
                     Rectangle {
-                        background: green;
+                        StandardTableView {
+                            y: 0;
+                            x: 20px;
+                            columns: [{ title: "Name" }, { title: "Born" }];
+                            rows: [
+                                [{ text:"Sister Hotty" }, { text: "4-5-2023" }],
+                                [{ text: "Brother Bob Thorton" }, { text: "6-3-2024" }],
+                                [{ text: "Sister Hunter" }, { text: "9-1-2024" }],
+                                [{ text: "Brother Lewis" }, { text: "8-15-2024" }],
+                                [{ text: "Brother Eastwood" }, { text: "12-31-2023" }],
+                            ];
+                        }
                     }
 
                     Rectangle {
-                        background: red;
+                        StandardTableView {
+                            y: 0;
+                            x: 20px;
+                            columns: [{ title: "Name" }, { title: "Born" }];
+                            rows: [
+                                [{ text:"Henrietta Hotty" }, { text: "4-5-2023" }],
+                                [{ text: "Billy Bob Thorton" }, { text: "6-3-2024" }],
+                                [{ text: "Holly Hunter" }, { text: "9-1-2024" }],
+                                [{ text: "Julliete Lewis" }, { text: "8-15-2024" }],
+                                [{ text: "Clint Eastwood" }, { text: "12-31-2023" }],
+                            ];
+                        }
                     }
                 }
 
@@ -173,8 +197,37 @@ export component AddUpdateView inherits Rectangle {
                     y: tables.height;
                     Rectangle {
                         HorizontalLayout {
+                            x: 0;
+                            y: 0;
+                            height: 50px;
+                            spacing: 10px;
+                            alignment: space-around;
                             Button {
+                                height: 30px;
                                 text: @tr("Add Child");
+                            }
+
+                            Button {
+                                height: 30px;
+                                text: @tr("Add Sibling");
+                            }
+
+                            Button {
+                                height: 30px;
+                                text: @tr("Pin/Unpin record");
+                            }
+
+                            Button {
+                                height: 30px;
+                                text: @tr("Save Record");
+                            }
+
+                            CustomButton {
+                                padding: 10px;
+                                height: 30px;
+                                width: 100px;
+                                title: @tr("Delete Record");
+                                background: blue;
                             }
                         }
                     }
