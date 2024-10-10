@@ -1,50 +1,137 @@
 import { CustomButton } from "components/button.slint";
-import { AddUpdateView} from "views/add-update-view.slint";
+import { UpdateView, AddView} from "views/add-update-view.slint";
 import { TabsView } from "views/tabs-view.slint";
-import { Palette } from "std-widgets.slint";
+import { Palette, Button } from "std-widgets.slint";
 import { TableData } from "types.slint";
+import { Switch } from "std-widgets.slint";
 
 export { TableData }
+
+ component Header inherits Rectangle {
+    in-out property <bool> dark-mode;
+    callback open-add-new();
+    y: 0px;
+    height: 60px;
+    background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #eceff4;
+
+    HorizontalLayout {
+        padding: 10px;
+        alignment: space-between;
+        Rectangle {
+            Text {
+                text: "Relatives";
+                font-size: 24px;
+                font-weight: 700;
+                color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: end;
+            Button {
+                text: "New Relative";
+                height: 36px;
+                clicked => {
+                    open-add-new()
+                }
+            }
+
+            Button {
+                text: "About";
+                height: 36px;
+            }
+
+            Switch {
+                text: @tr("Dark Mode");
+                checked: Palette.color-scheme == ColorScheme.dark;
+                toggled => {
+                    Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
+                }
+            }
+        }
+    }
+}
+
+component TaskBar inherits Rectangle {
+    callback close-popup();
+    height: 40px;
+    background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
+    HorizontalLayout {
+        alignment: space-between;
+        Button {
+            text: "Close";
+            height: parent.height - 10px;
+            clicked => {
+                close-popup()
+            }
+        }
+    }
+}
 
 export component Main inherits Window {
     min-width: 1920px;
     min-height: 960px;
     title: "Genealogy App";
-    in-out property <bool> dark-mode;
-    in-out property <[[StandardListViewItem]]> rows: [
-        [
-            { text: "Eliza global" },
-            { text: "23" },
-            { text: ".03" },
-            { text: "Unknown" },
-            { text: "Unknown" },
-            { text: "NULL" },
-            { text: "Eliza@doolittle.net" },
-            { text: "True" },
-            { text: "NONE" },
-            { text: "" },
-            { text: "" }
-        ],
-        [
-            { text: "Henrietta Hotty" },
-            { text: "19" },
-            { text: ".02" },
-            { text: "8" },
-            { text: "0" },
-            { text: "3" },
-            { text: "" },
-            { text: "True" },
-            { text: "NONE" },
-            { text: "" },
-            { text: "" }
-        ],
-    ];
-
     HorizontalLayout {
-        AddUpdateView {
-            background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #e5e9f0;
+        add-update-pop := PopupWindow {
+            width: root.width * 80%;
+            height: root.height * 80%;
+            x: (root.width - self.width) / 2;
+            y: (root.height - self.height) / 2;
+            close-on-click: false;
+
+            VerticalLayout {
+                TaskBar {
+                    close-popup => {
+                        add-update-pop.close()
+                    }
+                }
+
+                Rectangle {
+                    background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #e5e9f0;
+                    UpdateView {
+                        name: "Update Relative";
+                    }
+                }
+            }
         }
 
-        TabsView { }
+        new-popup := PopupWindow {
+            width: root.width * 80%;
+            height: root.height * 80%;
+            x: (root.width - self.width) / 2;
+            y: (root.height - self.height) / 2;
+            close-on-click: false;
+
+            VerticalLayout {
+                TaskBar {
+                    close-popup => {
+                        new-popup.close()
+                    }
+                }
+
+                Rectangle {
+                    background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #e5e9f0;
+                    AddView {
+                        name: "New Relative";
+                    }
+                }
+            }
+        }
+
+        VerticalLayout {
+            Header {
+                open-add-new => {
+                    new-popup.show()
+                }
+            }
+
+            TabsView {
+                show_popup_window => {
+                    add-update-pop.show();
+                }
+            }
+        }
     }
 }

@@ -1,12 +1,15 @@
 
 import { TabWidget, StandardTableView, GroupBox, VerticalBox } from "std-widgets.slint";
 import { Table } from "../components/table.slint";
+import { TableData , ActiveTab} from "../types.slint";
 export component Tabs inherits Rectangle {
-    TabWidget {
+
+    callback show_popup_window();
+
+    tab-widget := TabWidget {
         preferred-height: 100%;
         Tab {
             title: @tr("Relatives");
-
             Text {
                 y: 0;
                 x: 20px;
@@ -17,7 +20,13 @@ export component Tabs inherits Rectangle {
                 alignment: stretch;
                 GroupBox {
                     vertical-stretch: 0;
-                    Table { }
+                    Table {
+                        show-popup-window => {
+                            TableData.active-tab = ActiveTab.relative;
+                            show-popup-window()
+                        }
+                        data: TableData.relative;
+                    }
                 }
             }
         }
@@ -35,7 +44,13 @@ export component Tabs inherits Rectangle {
                 alignment: stretch;
                 GroupBox {
                     vertical-stretch: 0;
-                    Table { }
+                    Table {
+                        show_popup_window => {
+                            TableData.active-tab = ActiveTab.females;
+                            show_popup_window()
+                        }
+                        data: TableData.females;
+                    }
                 }
             }
         }
@@ -53,7 +68,13 @@ export component Tabs inherits Rectangle {
                 alignment: stretch;
                 GroupBox {
                     vertical-stretch: 0;
-                    Table { }
+                    Table {
+                        show_popup_window => {
+                            TableData.active-tab = ActiveTab.employees;
+                            show_popup_window()
+                        }
+                        data: TableData.employees;
+                    }
                 }
             }
         }

@@ -1,42 +1,230 @@
-  
 import { CustomButton } from "../components/button.slint";
-import { Button, CheckBox, Switch, HorizontalBox, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox, Palette, StandardTableView } from "std-widgets.slint";
-import { TableData } from "../types.slint";
+import { Button, CheckBox, Switch, HorizontalBox, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox, Palette, StandardTableView , ScrollView} from "std-widgets.slint";
+import { TableData , Relative} from "../types.slint";
+
 export component Header inherits Rectangle {
     in-out property <bool> dark-mode;
-    y: 5px;
-    preferred-width: 100%;
-    height: 50px;
+    in-out property <string> title;
+    y: 0px;
+    height: 60px;
+    background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #eceff4;
 
     HorizontalLayout {
+        padding: 10px;
         alignment: space-between;
         Rectangle {
-            border-radius: 5px;
-            width: parent.width / 2;
             Text {
-                text: "Add / Update";
-                font-size: 18px;
+                text: title;
+                font-size: 24px;
+                font-weight: 700;
+                color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
             }
         }
 
-        Rectangle {
-            border-radius: 5px;
-            width: parent.width / 2;
-            HorizontalLayout {
-                alignment: end;
-                Button {
-                    text: "Settings";
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: end;
+            Button {
+                text: "Settings";
+                height: 36px;
+            }
+
+            Button {
+                text: "About";
+                height: 36px;
+            }
+        }
+    }
+}
+
+export component AddView inherits Rectangle {
+    in-out property <Relative> relative;
+    in-out property <string> name;
+    border-radius: 10px;
+    VerticalLayout {
+        spacing: 10px;
+        padding: 10px;
+
+        Header {
+            title: name;
+        }
+
+        ScrollView {
+            VerticalLayout {
+                spacing: 15px;
+                GroupBox {
+                    title: "Personal Information";
+                    VerticalLayout {
+                        spacing: 10px;
+                        HorizontalBox {
+                            spacing: 10px;
+                            first-name := LineEdit {
+                                placeholder-text: "First Name";
+                            }
+
+                            middle-name := LineEdit {
+                                placeholder-text: "Middle Name";
+                            }
+
+                            last-name := LineEdit {
+                                placeholder-text: "Last Name";
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            sex := LineEdit {
+                                placeholder-text: "male or female";
+                                width: 25%;
+                            }
+
+                            birthday := LineEdit {
+                                placeholder-text: "Birthday (YYYY-MM-DD)";
+                                width: 25%;
+                            }
+
+                            age := LineEdit {
+                                placeholder-text: "Age (number)";
+                                width: 15%;
+                            }
+
+                            phone := LineEdit {
+                                placeholder-text: "Phone";
+                                width: 25%;
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            email := LineEdit {
+                                placeholder-text: "Email";
+                                width: 40%;
+                            }
+
+                            LineEdit {
+                                placeholder-text: "ATNum";
+                                width: 25%;
+                            }
+
+                            sameness := LineEdit {
+                                placeholder-text: "Sameness";
+                                width: 25%;
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            lost := LineEdit {
+                                placeholder-text: "Lost Reason";
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            pinned := CheckBox {
+                                text: "Pinned";
+                            }
+                        }
+
+                        HorizontalBox {
+                            Button {
+                                text: "Save";
+                                clicked => {
+                                    relative = {
+                                        first-name: first-name.text,
+                                        second-name: last-name.text,
+                                        sex: sex.text,
+                                        phone: phone.text,
+                                        email: email.text,
+                                        birthday: birthday.text,
+                                        lost-reason: lost.text,
+                                        sameness: sameness.text,
+                                        pinned: pinned.checked
+                                    };
+                                    TableData.save-new-relative(relative)
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            Rectangle {
+                                height: 100px;
+                                width: 100px;
+                                border-radius: 5px;
+                                background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
+                                Text {
+                                    text: "Image";
+                                    color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
+                                }
+                            }
+
+                            CustomButton {
+                                title: "Upload Photo";
+                                height: 30px;
+                                background: Palette.color-scheme == ColorScheme.dark ? #5e81ac : #81a1c1;
+                            }
+                        }
+                    }
                 }
 
-                Button {
-                    text: "About";
-                }
+                GroupBox {
+                    title: "Family Information";
+                    VerticalLayout {
+                        spacing: 10px;
+                        HorizontalLayout {
+                            alignment: space-around;
+                            Button {
+                                text: @tr("Add Mother");
+                            }
 
-                Switch {
-                    text: @tr("Dark Mode {}", TableData.current_row);
-                    checked: Palette.color-scheme == ColorScheme.dark;
-                    toggled => {
-                        Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
+                            Button {
+                                text: @tr("Add Father");
+                            }
+                        }
+
+                        HorizontalLayout {
+                            spacing: 10px;
+                            StandardTableView {
+                                columns: [{ title: "Name" }, { title: "Born" }];
+                                rows: [
+                                    [{ text:"Sister Hotty" }, { text: "4-5-2023" }],
+                                    [{ text: "Brother Bob Thorton" }, { text: "6-3-2024" }],
+                                ];
+                            }
+
+                            StandardTableView {
+                                columns: [{ title: "Name" }, { title: "Born" }];
+                                rows: [
+                                    [{ text:"Henrietta Hotty" }, { text: "4-5-2023" }],
+                                    [{ text: "Billy Bob Thorton" }, { text: "6-3-2024" }],
+                                ];
+                            }
+                        }
+
+                        HorizontalLayout {
+                            alignment: space-around;
+                            Button {
+                                text: @tr("Add Child");
+                            }
+
+                            Button {
+                                text: @tr("Add Sibling");
+                            }
+
+                            Button {
+                                text: @tr("Pin/Unpin record");
+                            }
+
+                            Button {
+                                text: @tr("Save Record");
+                                primary: true;
+                            }
+
+                            CustomButton {
+                                title: @tr("Delete Record");
+                                background: #bf616a;
+                            }
+                        }
                     }
                 }
             }
@@ -44,205 +232,200 @@ export component Header inherits Rectangle {
     }
 }
 
-export component AddUpdateView inherits Rectangle {
-    min-width: 400px;
-    preferred-height: 100%;
-    preferred-width: 100%;
+  
+// redundancy but it works lol
+export component UpdateView inherits Rectangle {
+    in-out property <Relative> relative;
 
-    Header { }
+    in-out property <string> name;
+    border-radius: 10px;
+    VerticalLayout {
+        spacing: 10px;
+        padding: 10px;
 
-    Rectangle {
+        Header {
+            title: name;
+        }
 
-        y: 60px;
-        preferred-width: 100%;
-
-        VerticalLayout {
-            Rectangle {
+        ScrollView {
+            VerticalLayout {
+                spacing: 15px;
                 GroupBox {
-                    x: 0;
-                    y: 0;
-                    HorizontalLayout {
-                        alignment: space-between;
-                        VerticalLayout {
+                    title: "Personal Information";
+                    VerticalLayout {
+                        spacing: 10px;
+                        HorizontalBox {
                             spacing: 10px;
-                            HorizontalBox {
-                                alignment: start;
-                                padding: 0px;
-                                LineEdit {
-                                    height: 30px;
-                                    placeholder-text: "Fist Name";
-                                }
-
-                                LineEdit {
-                                    height: 30px;
-                                    placeholder-text: "Middle Name";
-                                }
-
-                                LineEdit {
-                                    height: 30px;
-                                    placeholder-text: "Last Name";
-                                }
+                            first-name := LineEdit {
+                                placeholder-text: "First Name";
                             }
 
-                            HorizontalBox {
-                                alignment: start;
-                                padding: 0px;
-                                ComboBox {
-                                    model: [@tr("Select Sex"), @tr("Male"), @tr("Female"), @tr("Other")];
-                                }
+                            middle-name := LineEdit {
+                                placeholder-text: "Middle Name";
+                            }
 
-                                Button {
-                                    text: @tr("Bithday");
-                                    clicked => {
-                                        birthday-picker.show();
-                                    }
-                                }
+                            last-name := LineEdit {
+                                placeholder-text: "Last Name";
+                            }
+                        }
 
-                                Button {
-                                    text: @tr("Died");
-                                    clicked => {
-                                        died-picker.show();
-                                    }
-                                }
+                        HorizontalBox {
+                            spacing: 10px;
+                            sex := LineEdit {
+                                placeholder-text: "male or female";
+                                width: 25%;
+                            }
 
-                                Rectangle {
-                                    height: 20px;
-                                    width: 30px;
-                                    Text {
-                                        text: "age";
-                                    }
+                            birthday := LineEdit {
+                                placeholder-text: "Birthday (YYYY-MM-DD)";
+                                width: 25%;
+                            }
+
+                            age := LineEdit {
+                                placeholder-text: "Age (number)";
+                                width: 15%;
+                            }
+
+                            phone := LineEdit {
+                                placeholder-text: "Phone";
+                                width: 25%;
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            email := LineEdit {
+                                placeholder-text: "Email";
+                                width: 40%;
+                            }
+
+                            LineEdit {
+                                placeholder-text: "ATNum";
+                                width: 25%;
+                            }
+
+                            sameness := LineEdit {
+                                placeholder-text: "Sameness";
+                                width: 25%;
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            lost := LineEdit {
+                                placeholder-text: "Lost Reason";
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            pinned := CheckBox {
+                                text: "Pinned";
+                            }
+                        }
+
+                        HorizontalBox {
+                            Button {
+                                text: "Save";
+                                clicked => {
+                                    relative = {
+                                        first-name: first-name.text,
+                                        second-name: last-name.text,
+                                        sex: sex.text,
+                                        phone: phone.text,
+                                        email: email.text,
+                                        birthday: birthday.text,
+                                        lost-reason: lost.text,
+                                        sameness: sameness.text,
+                                        pinned: pinned.checked
+                                    };
+                                    TableData.save-new-relative(relative)
                                 }
                             }
                         }
 
-                        VerticalBox {
-
-                            alignment: end;
+                        HorizontalBox {
                             Rectangle {
-                                height: 300px;
-                                width: 300px;
-                                border-radius: 10px;
+                                height: 100px;
+                                width: 100px;
+                                border-radius: 5px;
+                                background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
                                 Text {
                                     text: "Image";
+                                    color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
                                 }
-
-                                background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #d8dee9;
                             }
 
                             CustomButton {
                                 title: "Upload Photo";
                                 height: 30px;
-                                background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #d8dee9;
+                                background: Palette.color-scheme == ColorScheme.dark ? #5e81ac : #81a1c1;
                             }
                         }
                     }
                 }
-            }
 
-            Rectangle {
-                buttonsA := HorizontalLayout {
-                    x: 0;
-                    y: 0;
-                    height: 50px;
-                    spacing: 10px;
-                    alignment: space-around;
-                    Button {
-                        height: 30px;
-                        text: @tr("Add Mother");
-                    }
-
-                    Button {
-                        height: 30px;
-                        text: @tr("Add Father");
-                    }
-                }
-
-                tables := HorizontalLayout {
-                    x: 0;
-                    y: buttonsA.height;
-                    height: 350px;
-                    Rectangle {
-                        StandardTableView {
-                            y: 0;
-                            x: 20px;
-                            columns: [{ title: "Name" }, { title: "Born" }];
-                            rows: [
-                                [{ text:"Sister Hotty" }, { text: "4-5-2023" }],
-                                [{ text: "Brother Bob Thorton" }, { text: "6-3-2024" }],
-                                [{ text: "Sister Hunter" }, { text: "9-1-2024" }],
-                                [{ text: "Brother Lewis" }, { text: "8-15-2024" }],
-                                [{ text: "Brother Eastwood" }, { text: "12-31-2023" }],
-                            ];
-                        }
-                    }
-
-                    Rectangle {
-                        StandardTableView {
-                            y: 0;
-                            x: 20px;
-                            columns: [{ title: "Name" }, { title: "Born" }];
-                            rows: [
-                                [{ text:"Henrietta Hotty" }, { text: "4-5-2023" }],
-                                [{ text: "Billy Bob Thorton" }, { text: "6-3-2024" }],
-                                [{ text: "Holly Hunter" }, { text: "9-1-2024" }],
-                                [{ text: "Julliete Lewis" }, { text: "8-15-2024" }],
-                                [{ text: "Clint Eastwood" }, { text: "12-31-2023" }],
-                            ];
-                        }
-                    }
-                }
-
-                HorizontalLayout {
-                    x: 0;
-                    y: tables.height;
-                    Rectangle {
+                GroupBox {
+                    title: "Family Information";
+                    VerticalLayout {
+                        spacing: 10px;
                         HorizontalLayout {
-                            x: 0;
-                            y: 0;
-                            height: 50px;
-                            spacing: 10px;
                             alignment: space-around;
                             Button {
-                                height: 30px;
+                                text: @tr("Add Mother");
+                            }
+
+                            Button {
+                                text: @tr("Add Father");
+                            }
+                        }
+
+                        HorizontalLayout {
+                            spacing: 10px;
+                            StandardTableView {
+                                columns: [{ title: "Name" }, { title: "Born" }];
+                                rows: [
+                                    [{ text:"Sister Hotty" }, { text: "4-5-2023" }],
+                                    [{ text: "Brother Bob Thorton" }, { text: "6-3-2024" }],
+                                ];
+                            }
+
+                            StandardTableView {
+                                columns: [{ title: "Name" }, { title: "Born" }];
+                                rows: [
+                                    [{ text:"Henrietta Hotty" }, { text: "4-5-2023" }],
+                                    [{ text: "Billy Bob Thorton" }, { text: "6-3-2024" }],
+                                ];
+                            }
+                        }
+
+                        HorizontalLayout {
+                            alignment: space-around;
+                            Button {
                                 text: @tr("Add Child");
                             }
 
                             Button {
-                                height: 30px;
                                 text: @tr("Add Sibling");
                             }
 
                             Button {
-                                height: 30px;
                                 text: @tr("Pin/Unpin record");
                             }
 
                             Button {
-                                height: 30px;
                                 text: @tr("Save Record");
+                                primary: true;
                             }
 
                             CustomButton {
-                                padding: 10px;
-                                height: 30px;
-                                width: 100px;
                                 title: @tr("Delete Record");
-                                background: blue;
+                                background: #bf616a;
                             }
                         }
                     }
                 }
             }
         }
-    }
-
-    birthday-picker := DatePickerPopup {
-        x: (root.width - self.width) / 2;
-        y: (root.height - self.height) / 2;
-    }
-
-    died-picker := DatePickerPopup {
-        x: (root.width - self.width) / 2;
-        y: (root.height - self.height) / 2;
     }
 }

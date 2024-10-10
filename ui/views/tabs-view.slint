@@ -5,13 +5,17 @@ import { Tabs } from "../items/tabs.slint";
 import { NotesSect } from "../items/notes-section.slint";
 
 export component TabsView inherits Rectangle {
-    min-width: 400px;
     preferred-height: 100%;
     preferred-width: 100%;
+    callback show_popup_window();
 
     VerticalLayout {
         tabs := Rectangle {
-            Tabs { }
+            Tabs {
+                show_popup_window => {
+                    show_popup_window()
+                }
+            }
         }
 
         notes := Rectangle {

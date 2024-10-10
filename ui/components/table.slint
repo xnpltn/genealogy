@@ -1,9 +1,12 @@
 
 import { StandardTableView } from "std-widgets.slint";
 import { TableData } from "../types.slint";
-
+import { Relative } from "../types.slint";
 export component Table inherits StandardTableView {
+    callback show-popup-window();
+    in property <[[StandardListViewItem]]> data;
     in-out property <[TableColumn]> c:
+    
   [
         { title: "Name" },
         { title: "Age" },
@@ -19,8 +22,10 @@ export component Table inherits StandardTableView {
     ];
     current-row-changed => {
         TableData.current_row = self.current-row;
-        TableData.current-row-changed(self.current-row)
+        TableData.current-row-changed(self.current-row);
+        TableData.has_selected_row = true;
+        show_popup_window();
     }
     columns: c;
-    rows: TableData.row_data;
+    rows: data;
 }
