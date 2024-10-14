@@ -63,8 +63,16 @@ component TaskBar inherits Rectangle {
             text: "Close";
             height: parent.height - 10px;
             clicked => {
+                TableData.error = "";
+                TableData.selected-father-id = -1;
+                TableData.selected-mother-id = -1;
                 close-popup()
             }
+        }
+
+        Text {
+            text: TableData.error;
+            color: Colors.red;
         }
     }
 }
@@ -91,7 +99,7 @@ export component Main inherits Window {
                 Rectangle {
                     background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #e5e9f0;
                     UpdateView {
-                        name: "Update Relative";
+                        title: "Update Relative";
                     }
                 }
             }

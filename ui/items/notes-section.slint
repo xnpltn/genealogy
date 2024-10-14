@@ -1,54 +1,146 @@
-import { Button, ScrollView, StandardTableView, TabWidget, VerticalBox } from "std-widgets.slint";
+import {Palette,  Button, ScrollView, StandardTableView, TabWidget, VerticalBox } from "std-widgets.slint";
+import { TableData } from "../types.slint";
+import { CustomButton } from "../components/button.slint";
+import { ListView } from "std-widgets.slint";
+
+
+
+component TableHeader inherits Rectangle {
+    in property <string> column1;
+    in property <string> column2;
+
+    HorizontalLayout {
+        alignment: space-between;
+        Rectangle {
+            Text {
+                text: column1;
+                font-size: 14px;
+                font-weight: 700;
+            }
+        }
+
+        Rectangle {
+            Text {
+                text: column2;
+                font-size: 14px;
+                font-weight: 700;
+            }
+        }
+    }
+}
+
 export component NotesSect inherits Rectangle {
     property <string> active_note: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua...";
+    background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #eceff4;
+    border-radius: 10px;
+
     HorizontalLayout {
+        padding: 16px;
+        spacing: 16px;
+
         Rectangle {
+            width: 50%;
             TabWidget {
                 Tab {
                     title: "Files";
-                    Text {
-                        text: "Files";
+                    VerticalLayout {
+                        spacing: 10px;
+                        padding: 10px;
+
+                        HorizontalLayout {
+                            spacing: 10px;
+                            Text {
+                                text: "Files";
+                                font-size: 20px;
+                                font-weight: 700;
+                                vertical-alignment: center;
+                            }
+
+                            Button {
+                                text: "Add Files";
+                                clicked => {
+                                    TableData.add-files-for-relative(TableData.current_row)
+                                }
+                            }
+                        }
+
+                        TableHeader {
+                            column1: "File Name";
+                            column2: "Size";
+                        }
+
+                        ListView {
+                            for data in TableData.selected-relative-files: Rectangle {
+                                HorizontalLayout {
+                                    Text {
+                                        text: data;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
                 Tab {
                     title: "Notes";
-                    Text {
-                        text: "Notes";
+                    VerticalLayout {
+                        spacing: 10px;
+                        padding: 10px;
+
+                        HorizontalLayout {
+                            spacing: 10px;
+                            Text {
+                                text: "Notes";
+                                font-size: 20px;
+                                font-weight: 700;
+                                vertical-alignment: center;
+                            }
+
+                            CustomButton {
+                                height: 40px;
+                                width: 120px;
+                                title: "Add Note";
+                                background: #12e;
+                            }
+                        }
+
+                        VerticalLayout {
+                            Rectangle {
+                                HorizontalLayout {
+                                    Text {
+                                        text: TableData.selected-relative-note;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
-        Rectangle {
-            width: parent.width / 2;
+        VerticalLayout {
+            width: 50%;
+            spacing: 0px;
             header := Text {
-                x: parent.width / 2 - self.width;
-                y: 0;
                 text: "Active Note";
                 font-size: 24px;
+                font-weight: 500;
+                horizontal-alignment: center;
+                color: Palette.color-scheme == ColorScheme.dark ? #e5e9f0 : #2e3440;
             }
 
             note-container := Rectangle {
-                y: header.height;
-                border-radius: 20px;
-                height: 200px;
-                background: greenyellow;
+                border-radius: 10px;
+                background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #e5e9f0;
                 VerticalBox {
-                    padding: 20px;
+                    padding: 16px;
                     text := Text {
                         width: 100%;
-                        text: active_note;
+                        text: TableData.active-relative.note;
                         wrap: word-wrap;
-                        font-size: 24px;
+                        font-size: 16px;
+                        color: Palette.color-scheme == ColorScheme.dark ? #e5e9f0 : #2e3440;
                     }
-                }
-            }
-
-            buttons := Rectangle {
-                y: note-container.height;
-                Button {
-                    text: "Hello wolr";
                 }
             }
         }

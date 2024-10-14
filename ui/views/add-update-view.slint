@@ -1,5 +1,5 @@
 import { CustomButton } from "../components/button.slint";
-import { Button, CheckBox, Switch, HorizontalBox, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox, Palette, StandardTableView , ScrollView} from "std-widgets.slint";
+import { Button, CheckBox, Switch, HorizontalBox, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox, Palette, StandardTableView , ScrollView, TextEdit} from "std-widgets.slint";
 import { TableData , Relative} from "../types.slint";
 
 export component Header inherits Rectangle {
@@ -83,11 +83,6 @@ export component AddView inherits Rectangle {
                                 width: 25%;
                             }
 
-                            age := LineEdit {
-                                placeholder-text: "Age (number)";
-                                width: 15%;
-                            }
-
                             phone := LineEdit {
                                 placeholder-text: "Phone";
                                 width: 25%;
@@ -127,21 +122,84 @@ export component AddView inherits Rectangle {
                         }
 
                         HorizontalBox {
+                            spacing: 10px;
+                            alignment: space-around;
+                            VerticalLayout {
+                                Text {
+                                    text: "Choose Mother";
+                                }
+
+                                mother-table := StandardTableView {
+                                    width: 300px;
+                                    height: 150px;
+                                    columns: [
+                                        { title: "Name" },
+                                        { title: "age" },
+                                        { title: "phone" },
+                                    ];
+                                    rows: TableData.females2;
+                                    current-row-changed(i) => {
+                                        TableData.selected-mother-id = i;
+                                    }
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Choose Father";
+                                }
+
+                                father-table := StandardTableView {
+                                    width: 300px;
+                                    height: 150px;
+                                    columns: [
+                                        { title: "Name" },
+                                        { title: "age" },
+                                        { title: "phone" },
+                                    ];
+                                    rows: TableData.males;
+                                    current-row-changed(i) => {
+                                        TableData.selected-father-id = i;
+                                    }
+                                }
+                            }
+                        }
+
+              /*
+                        HorizontalBox {
+                            Rectangle {
+                                Rectangle {
+                                    height: 100%;
+                                    width: 100%;
+                                    border-radius: 5px;
+                                    background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
+                                    note := TextEdit {
+                                        text: "Image";
+                                    }
+                                }
+                            }
+                        }
+              */
+
+
+
+                        HorizontalBox {
                             Button {
                                 text: "Save";
                                 clicked => {
                                     relative = {
                                         first-name: first-name.text,
-                                        second-name: last-name.text,
+                                        middle-name: middle-name.text,
+                                        last-name: last-name.text,
                                         sex: sex.text,
                                         phone: phone.text,
                                         email: email.text,
                                         birthday: birthday.text,
                                         lost-reason: lost.text,
                                         sameness: sameness.text,
-                                        pinned: pinned.checked
+                                        pinned: pinned.checked,
                                     };
-                                    TableData.save-new-relative(relative)
+                                    TableData.create-new-relative(relative)
                                 }
                             }
                         }
@@ -173,12 +231,16 @@ export component AddView inherits Rectangle {
                         spacing: 10px;
                         HorizontalLayout {
                             alignment: space-around;
-                            Button {
-                                text: @tr("Add Mother");
+                            CustomButton {
+                                height: 40px;
+                                width: 120px;
+                                title: @tr("Add Mother");
                             }
 
-                            Button {
-                                text: @tr("Add Father");
+                            CustomButton {
+                                height: 40px;
+                                width: 120px;
+                                title: @tr("Add Father");
                             }
                         }
 
@@ -203,21 +265,11 @@ export component AddView inherits Rectangle {
 
                         HorizontalLayout {
                             alignment: space-around;
-                            Button {
-                                text: @tr("Add Child");
-                            }
 
-                            Button {
-                                text: @tr("Add Sibling");
-                            }
-
-                            Button {
-                                text: @tr("Pin/Unpin record");
-                            }
-
-                            Button {
-                                text: @tr("Save Record");
-                                primary: true;
+                            CustomButton {
+                                height: 40px;
+                                width: 120px;
+                                title: @tr("Pin/Unpin record");
                             }
 
                             CustomButton {
@@ -236,15 +288,16 @@ export component AddView inherits Rectangle {
 // redundancy but it works lol
 export component UpdateView inherits Rectangle {
     in-out property <Relative> relative;
+    in-out property <Relative> og;
 
-    in-out property <string> name;
+    in-out property <string> title;
     border-radius: 10px;
     VerticalLayout {
         spacing: 10px;
         padding: 10px;
 
         Header {
-            title: name;
+            title: title;
         }
 
         ScrollView {
@@ -256,64 +309,128 @@ export component UpdateView inherits Rectangle {
                         spacing: 10px;
                         HorizontalBox {
                             spacing: 10px;
-                            first-name := LineEdit {
-                                placeholder-text: "First Name";
+                            VerticalLayout {
+                                Text {
+                                    text: "First Name";
+                                }
+
+                                first-name := LineEdit {
+                                    placeholder-text: "First Name";
+                                    text: TableData.active-relative.first-name;
+                                }
                             }
 
-                            middle-name := LineEdit {
-                                placeholder-text: "Middle Name";
+                            VerticalLayout {
+                                Text {
+                                    text: "Middle Name";
+                                }
+
+                                middle-name := LineEdit {
+                                    placeholder-text: "Middle Name";
+                                    text: TableData.active-relative.middle-name;
+                                }
                             }
 
-                            last-name := LineEdit {
-                                placeholder-text: "Last Name";
-                            }
-                        }
+                            VerticalLayout {
+                                Text {
+                                    text: "Last Name";
+                                }
 
-                        HorizontalBox {
-                            spacing: 10px;
-                            sex := LineEdit {
-                                placeholder-text: "male or female";
-                                width: 25%;
-                            }
-
-                            birthday := LineEdit {
-                                placeholder-text: "Birthday (YYYY-MM-DD)";
-                                width: 25%;
-                            }
-
-                            age := LineEdit {
-                                placeholder-text: "Age (number)";
-                                width: 15%;
-                            }
-
-                            phone := LineEdit {
-                                placeholder-text: "Phone";
-                                width: 25%;
+                                last-name := LineEdit {
+                                    placeholder-text: "Last Name";
+                                    text: TableData.active-relative.last-name;
+                                }
                             }
                         }
 
                         HorizontalBox {
                             spacing: 10px;
-                            email := LineEdit {
-                                placeholder-text: "Email";
-                                width: 40%;
+                            VerticalLayout {
+                                Text {
+                                    text: "Sex";
+                                }
+
+                                sex := LineEdit {
+                                    placeholder-text: "male or female";
+                                    text: TableData.active-relative.sex;
+                                    width: 25%;
+                                }
                             }
 
-                            LineEdit {
-                                placeholder-text: "ATNum";
-                                width: 25%;
+                            VerticalLayout {
+                                Text {
+                                    text: "Birthday";
+                                }
+
+                                birthday := LineEdit {
+                                    placeholder-text: "Birthday (YYYY-MM-DD)";
+                                    text: TableData.active-relative.birthday;
+                                    width: 25%;
+                                }
                             }
 
-                            sameness := LineEdit {
-                                placeholder-text: "Sameness";
-                                width: 25%;
+                            VerticalLayout {
+                                Text {
+                                    text: "Phone";
+                                }
+
+                                phone := LineEdit {
+                                    placeholder-text: "Phone";
+                                    text: TableData.active-relative.phone;
+                                    width: 25%;
+                                }
                             }
                         }
 
                         HorizontalBox {
                             spacing: 10px;
-                            lost := LineEdit {
-                                placeholder-text: "Lost Reason";
+                            VerticalLayout {
+                                Text {
+                                    text: "Email";
+                                }
+
+                                email := LineEdit {
+                                    placeholder-text: "Email";
+                                    text: TableData.active-relative.email;
+                                    width: 40%;
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "ATNum";
+                                }
+
+                                LineEdit {
+                                    placeholder-text: "ATNum";
+                                    width: 25%;
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Sameness";
+                                }
+
+                                sameness := LineEdit {
+                                    placeholder-text: "Sameness";
+                                    text: TableData.active-relative.sameness;
+                                    width: 25%;
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            VerticalLayout {
+                                Text {
+                                    text: "Lost Reason";
+                                }
+
+                                lost := LineEdit {
+                                    placeholder-text: "Lost Reason";
+                                    text: TableData.active-relative.lost-reason;
+                                }
                             }
                         }
 
@@ -321,6 +438,51 @@ export component UpdateView inherits Rectangle {
                             spacing: 10px;
                             pinned := CheckBox {
                                 text: "Pinned";
+                                checked: TableData.active-relative.pinned;
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            alignment: space-around;
+                            VerticalLayout {
+                                Text {
+                                    text: "Choose Mother";
+                                }
+
+                                mother-table := StandardTableView {
+                                    width: 300px;
+                                    height: 150px;
+                                    columns: [
+                                        { title: "Name" },
+                                        { title: "age" },
+                                        { title: "phone" },
+                                    ];
+                                    rows: TableData.females2;
+                                    current-row-changed(i) => {
+                                        TableData.selected-mother-id = i;
+                                    }
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Choose Father";
+                                }
+
+                                father-table := StandardTableView {
+                                    width: 300px;
+                                    height: 150px;
+                                    columns: [
+                                        { title: "Name" },
+                                        { title: "age" },
+                                        { title: "phone" },
+                                    ];
+                                    rows: TableData.males;
+                                    current-row-changed(i) => {
+                                        TableData.selected-father-id = i;
+                                    }
+                                }
                             }
                         }
 
@@ -330,24 +492,25 @@ export component UpdateView inherits Rectangle {
                                 clicked => {
                                     relative = {
                                         first-name: first-name.text,
-                                        second-name: last-name.text,
+                                        middle-name: middle-name.text,
+                                        last-name: last-name.text,
                                         sex: sex.text,
                                         phone: phone.text,
                                         email: email.text,
                                         birthday: birthday.text,
                                         lost-reason: lost.text,
                                         sameness: sameness.text,
-                                        pinned: pinned.checked
+                                        pinned: pinned.checked,
                                     };
-                                    TableData.save-new-relative(relative)
+                                    TableData.update-relative(TableData.active-relative.id,relative)
                                 }
                             }
                         }
 
                         HorizontalBox {
+                            alignment: space-between;
                             Rectangle {
-                                height: 100px;
-                                width: 100px;
+                                height: parent.width * 20%;
                                 border-radius: 5px;
                                 background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
                                 Text {
@@ -371,12 +534,16 @@ export component UpdateView inherits Rectangle {
                         spacing: 10px;
                         HorizontalLayout {
                             alignment: space-around;
-                            Button {
-                                text: @tr("Add Mother");
+                            CustomButton {
+                                height: 40px;
+                                width: 120px;
+                                title: @tr("Add Mother");
                             }
 
-                            Button {
-                                text: @tr("Add Father");
+                            CustomButton {
+                                height: 40px;
+                                width: 120px;
+                                title: @tr("Add Father");
                             }
                         }
 
@@ -401,24 +568,16 @@ export component UpdateView inherits Rectangle {
 
                         HorizontalLayout {
                             alignment: space-around;
-                            Button {
-                                text: @tr("Add Child");
-                            }
-
-                            Button {
-                                text: @tr("Add Sibling");
-                            }
-
-                            Button {
-                                text: @tr("Pin/Unpin record");
-                            }
-
-                            Button {
-                                text: @tr("Save Record");
-                                primary: true;
+                            CustomButton {
+                                height: 40px;
+                                width: 120px;
+                                title: @tr("Pin/Unpin record");
+                                background: #16a;
                             }
 
                             CustomButton {
+                                height: 40px;
+                                width: 120px;
                                 title: @tr("Delete Record");
                                 background: #bf616a;
                             }

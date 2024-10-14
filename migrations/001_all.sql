@@ -13,12 +13,16 @@ CREATE TABLE relative (
     mname           TEXT,
     lname           TEXT NOT NULL, 
     full_name       TEXT ,
-    phone           TEXT,
-    email           TEXT,
+    phone           TEXT UNIQUE,
+    email           TEXT UNIQUE,
     mother_id       INTEGER,
     father_id       INTEGER,
     end_of_line     BOOLEAN DEFAULT 1,
     pinned          BOOLEAN DEFAULT 0,
+    hotness         INTEGER DEFAULT 0,
+    crazy           INTEGER DEFAULT 0,
+    swarthy         INTEGER DEFAULT 0,
+    employable      INTEGER DEFAULT 0,
     FOREIGN KEY (mother_id) REFERENCES relative(id),
     FOREIGN KEY (father_id) REFERENCES relative(id)
 );

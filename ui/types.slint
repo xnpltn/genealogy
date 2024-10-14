@@ -1,15 +1,17 @@
 
 export struct Relative {
+    id: string,
     first-name: string,
-    second-name: string,
+    middle-name: string,
+    last-name: string,
     sex: string,
     phone: string,
     email: string,
     pinned: bool,
-    sex: string,
     birthday: string,
     lost-reason: string,
     sameness: string,
+    note: string,
 }
 
 export enum ActiveTab{relative, employees, females}
@@ -18,13 +20,24 @@ export enum ActiveTab{relative, employees, females}
 export global TableData {
     in property <[[StandardListViewItem]]> relative;
     in property <[[StandardListViewItem]]> females;
+    in property <[[StandardListViewItem]]> males;
+    in property <[[StandardListViewItem]]> females2;
     in property <[[StandardListViewItem]]> employees;
+    in-out property <int> selected-mother-id: -1;
+    in-out property <int> selected-father-id: -1;
     in-out property <int> current_row;
     in-out property <bool> has_selected_row;
     in-out property <ActiveTab> active-tab;
     callback current-row-changed(int);
     in-out property <Relative> active-relative;
     in-out property <Relative> new-relative;
-    callback save-new-relative(Relative);
-    callback update-relative(string, Relative); // first parameter is an email used to track the relative
+    callback create-new-relative(Relative);
+    callback update-relative(string, Relative); // first parameter is an id used to track the relative
+    in-out property <string> error;
+    in-out property <string> mother-phone;
+    in-out property <string> father-phone;
+    callback add-files-for-relative(int);
+    callback add-note-for-relative(int);
+    in-out property <[string]> selected-relative-files;
+    in-out property <string> selected-relative-note;
 }
