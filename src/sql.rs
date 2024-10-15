@@ -178,6 +178,7 @@ pub fn update_both_parents() -> String {
 pub fn get_females() -> String {
     let query = r#"
         SELECT 
+            id,
             full_name,
             phone,
             age
@@ -196,6 +197,7 @@ pub fn get_females() -> String {
 pub fn get_males() -> String {
     let query = r#"
         SELECT 
+            id,
             full_name,
             age,
             phone
@@ -245,8 +247,8 @@ pub fn add_file() -> String {
                     'xzy',
                     1,
                     $2,
-                    '20',
-                    'file',
+                    $3,
+                    $4,
                     'xzy',
                     'file'
                )

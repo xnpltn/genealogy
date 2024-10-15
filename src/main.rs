@@ -1,26 +1,52 @@
+#![allow(deprecated)]
 use native_dialog::FileDialog;
 use slint::*;
-
-mod sql;
-
+use slint::{StandardListViewItem, VecModel};
 use sqlx::{migrate, Row};
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
-
+use std::fs;
+use std::io;
 use std::rc::Rc;
+use std::{env, u64};
 
-use slint::{StandardListViewItem, VecModel};
+mod sql;
 
 slint::include_modules!();
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    if !Sqlite::database_exists("store.db").await.unwrap_or(false) {
-        Sqlite::create_database("store.db").await?;
+    let mut work_dir = String::from(std::format!(
+        "{}/.geneapp",
+        env::home_dir().unwrap().to_str().unwrap()
+    ));
+
+    if let Some(dir) = env::home_dir() {
+        match fs::create_dir_all(std::format!("{}/.geneapp", dir.to_str().unwrap()).as_str()) {
+            Ok(()) => println!("working dir created"),
+            Err(e) => {
+                if e.kind() != io::ErrorKind::AlreadyExists {
+                    println!("error: {}", e);
+                    fs::create_dir(".geneapp").unwrap();
+                    work_dir = ".geneapp".to_string();
+                } else {
+                    println!("already exists");
+                    work_dir = std::format!("{}/.geneapp", dir.to_str().unwrap());
+                }
+            }
+        }
     }
 
-    let pool = SqlitePool::connect("sqlite://store.db").await?;
-    migrate!("./migrations").run(&pool).await?;
+    println!("{work_dir}");
+    if !Sqlite::database_exists(std::format!("{}/store.db", work_dir).as_str())
+        .await
+        .unwrap_or(false)
+    {
+        Sqlite::create_database(std::format!("{}/store.db", work_dir).as_str()).await?;
+        println!("db creation done");
+    }
 
+    let pool = SqlitePool::connect(std::format!("{}/store.db", work_dir).as_str()).await?;
+    migrate!("./migrations").run(&pool).await?;
     let app = Main::new()?;
 
     let females = get_female_relatives(&pool).await?;
@@ -95,6 +121,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     app.global::<TableData>().on_update_relative({
         let weak_app = app.as_weak();
         let pool = pool.clone();
+
+        // the veriable 'email' is id.
         move |email, relative| {
             let pool = pool.clone();
             let weak_app = weak_app.clone();
@@ -293,25 +321,52 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("{email}");
                         let path = FileDialog::new()
                             .set_location("~/Desktop")
-                            .add_filter("PNG Image", &["png"])
-                            .add_filter("JPEG Image", &["jpg", "jpeg"])
+                            .add_filter("Image", &["jpg", "jpeg", "png"])
+                            .add_filter("PDF File", &["pdf"])
+                            // microsoft word, microsoft excel,powerpoint, etc
+                            //.add_filter("Office File", &[""])
+                            .add_filter("Media File", &["mp4", "mp3", "mkv", "avi"])
                             .show_open_single_file()
                             .unwrap();
 
                         if let Some(p) = path {
                             let p = Rc::new(p);
+                            let mut size: u64 = 0;
+                            let work_dir = work_dir.clone();
                             let _ = slint::spawn_local({
                                 let pool = pool.clone();
                                 let xx = Rc::clone(&p);
+                                match fs::copy(
+                                    xx.to_str().unwrap(),
+                                    std::format!(
+                                        "{work_dir}/{email}-{}",
+                                        xx.file_name().unwrap().to_str().unwrap().to_string()
+                                    ),
+                                ) {
+                                    Ok(n) => {
+                                        size += n;
+                                        println!("copied file")
+                                    }
+                                    Err(_) => weak_app
+                                        .unwrap()
+                                        .global::<TableData>()
+                                        .set_files_error(SharedString::from("can't add file")),
+                                }
+
                                 async move {
                                     let res = sqlx::query(&sql::add_file())
                                         .bind(xx.to_str().unwrap().to_string())
                                         .bind(xx.extension().unwrap().to_str().unwrap().to_string())
+                                        .bind(size as i32)
+                                        .bind(std::format!(
+                                            "{email}-{}",
+                                            xx.file_name().unwrap().to_str().unwrap().to_string()
+                                        ))
                                         .execute(&pool)
                                         .await;
                                     match res {
                                         Ok(_) => println!("created"),
-                                        Err(e) => println!("{}", e.to_string()),
+                                        Err(e) => println!("{e}"),
                                     }
                                 }
                             });
@@ -542,6 +597,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .global::<TableData>()
                                     .set_error(e.to_string().into());
                             }
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    app.global::<TableData>().on_delete_relative({
+        let weak_app = app.as_weak();
+        let pool = pool.clone();
+        move |id| {
+            let pool = pool.clone();
+            let weak_app = weak_app.unwrap().as_weak();
+            let _ = slint::spawn_local({
+                let pool = pool.clone();
+                async move {
+                    let res = sqlx::query("DELETE FROM relative WHERE id=$1")
+                        .bind(id.to_string())
+                        .execute(&pool)
+                        .await;
+                    match res {
+                        Ok(_) => println!("deleted where id is 1"),
+                        Err(e) => {
+                            weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_error(slint::format!("error deleting relative, {e}"));
                         }
                     }
                 }

@@ -376,11 +376,6 @@ export component AddView inherits Rectangle {
                                 width: 120px;
                                 title: @tr("Pin/Unpin record");
                             }
-
-                            CustomButton {
-                                title: @tr("Delete Record");
-                                background: #bf616a;
-                            }
                         }
                     }
                 }
@@ -736,6 +731,9 @@ export component UpdateView inherits Rectangle {
                                 width: 120px;
                                 title: @tr("Delete Record");
                                 background: #bf616a;
+                                clicked => {
+                                    TableData.delete-relative(TableData.active-relative.id);
+                                }
                             }
                         }
                     }

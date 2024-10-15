@@ -37,6 +37,7 @@ export global TableData {
     in-out property <Relative> new-relative;
     callback create-new-relative(Relative);
     callback update-relative(string, Relative); // first parameter is an id used to track the relative
+    callback delete-relative(string);
     in-out property <string> error;
     in-out property <string> files_error;
     in-out property <string> mother-phone;
