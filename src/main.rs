@@ -311,72 +311,108 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     app.global::<TableData>().on_add_files_for_relative({
         let weak_app = app.as_weak();
         let pool = pool.clone();
-        move |row| {
-            let active_tab = weak_app.unwrap().global::<TableData>().get_active_tab();
-            if active_tab == ActiveTab::Relative {
-                let table_data = weak_app.unwrap().global::<TableData>().get_relative();
-                if let Some(table_data) = table_data.row_data(row as usize) {
-                    if let Some(email) = table_data.row_data(0) {
-                        let email = email.text;
-                        println!("{email}");
-                        let path = FileDialog::new()
-                            .set_location("~/Desktop")
-                            .add_filter("Image", &["jpg", "jpeg", "png"])
-                            .add_filter("PDF File", &["pdf"])
-                            // microsoft word, microsoft excel,powerpoint, etc
-                            //.add_filter("Office File", &[""])
-                            .add_filter("Media File", &["mp4", "mp3", "mkv", "avi"])
-                            .show_open_single_file()
-                            .unwrap();
+        move |row, id| {
+            if id == "" {
+                weak_app
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_files_error(SharedString::from(
+                        "No selected relative, click on one row.",
+                    ));
+            } else {
+                let active_tab = weak_app.unwrap().global::<TableData>().get_active_tab();
+                if active_tab == ActiveTab::Relative {
+                    let table_data = weak_app.unwrap().global::<TableData>().get_relative();
+                    if let Some(table_data) = table_data.row_data(row as usize) {
+                        if let Some(email) = table_data.row_data(0) {
+                            let email = email.text;
+                            println!("{email}");
+                            let path = FileDialog::new()
+                                .set_location("~/Desktop")
+                                .add_filter("Image", &["jpg", "jpeg", "png"])
+                                .add_filter("PDF File", &["pdf"])
+                                // microsoft word, microsoft excel,powerpoint, etc
+                                //.add_filter("Office File", &[""])
+                                .add_filter("Media File", &["mp4", "mp3", "mkv", "avi"])
+                                .show_open_single_file()
+                                .unwrap();
 
-                        if let Some(p) = path {
-                            let p = Rc::new(p);
-                            let mut size: u64 = 0;
-                            let work_dir = work_dir.clone();
-                            let _ = slint::spawn_local({
-                                let pool = pool.clone();
-                                let xx = Rc::clone(&p);
-                                match fs::copy(
-                                    xx.to_str().unwrap(),
-                                    std::format!(
-                                        "{work_dir}/{email}-{}",
-                                        xx.file_name().unwrap().to_str().unwrap().to_string()
-                                    ),
-                                ) {
-                                    Ok(n) => {
-                                        size += n;
-                                        println!("copied file")
-                                    }
-                                    Err(_) => weak_app
-                                        .unwrap()
-                                        .global::<TableData>()
-                                        .set_files_error(SharedString::from("can't add file")),
-                                }
+                            if let Some(p) = path {
+                                let p = Rc::new(p);
+                                let mut size: u64 = 0;
 
-                                async move {
-                                    let res = sqlx::query(&sql::add_file())
-                                        .bind(xx.to_str().unwrap().to_string())
-                                        .bind(xx.extension().unwrap().to_str().unwrap().to_string())
-                                        .bind(size as i32)
-                                        .bind(std::format!(
-                                            "{email}-{}",
+                                let work_dir = work_dir.clone();
+                                let _ = slint::spawn_local({
+                                    let pool = pool.clone();
+                                    let xx = Rc::clone(&p);
+                                    match fs::copy(
+                                        xx.to_str().unwrap(),
+                                        std::format!(
+                                            "{work_dir}/{email}-{}",
                                             xx.file_name().unwrap().to_str().unwrap().to_string()
-                                        ))
-                                        .execute(&pool)
-                                        .await;
-                                    match res {
-                                        Ok(_) => println!("created"),
-                                        Err(e) => println!("{e}"),
+                                        ),
+                                    ) {
+                                        Ok(n) => {
+                                            size += n;
+                                            //let meta = fs::metadata(std::format!(
+                                            //    "{work_dir}/{email}-{}",
+                                            //    xx.file_name()
+                                            //        .unwrap()
+                                            //        .to_str()
+                                            //        .unwrap()
+                                            //        .to_string()
+                                            //));
+                                            //match meta {
+                                            //    Ok(m) => {
+                                            //        println!("meta data: {}", m.len());
+                                            //    }
+                                            //    Err(e) => {
+                                            //        println!(" error getting file metadata {e}");
+                                            //    }
+                                            //}
+                                        }
+                                        Err(_) => weak_app
+                                            .unwrap()
+                                            .global::<TableData>()
+                                            .set_files_error(SharedString::from("can't add file")),
                                     }
-                                }
-                            });
+
+                                    async move {
+                                        println!("size is {size}");
+                                        let res = sqlx::query(&sql::add_file())
+                                            .bind(xx.to_str().unwrap().to_string())
+                                            .bind(id.to_string())
+                                            .bind(
+                                                xx.extension()
+                                                    .unwrap()
+                                                    .to_str()
+                                                    .unwrap()
+                                                    .to_string(),
+                                            )
+                                            .bind(size as i32)
+                                            .bind(std::format!(
+                                                "{email}-{}",
+                                                xx.file_name()
+                                                    .unwrap()
+                                                    .to_str()
+                                                    .unwrap()
+                                                    .to_string()
+                                            ))
+                                            .execute(&pool)
+                                            .await;
+                                        match res {
+                                            Ok(_) => println!("created"),
+                                            Err(e) => println!("{e}"),
+                                        }
+                                    }
+                                });
+                            }
                         }
+                    } else {
+                        weak_app.unwrap().global::<TableData>().set_files_error(
+                            SharedString::from("Select a relative to add files for!"),
+                        );
                     }
-                } else {
-                    weak_app
-                        .unwrap()
-                        .global::<TableData>()
-                        .set_files_error(SharedString::from("Select a relative to add files for!"));
                 }
             }
         }

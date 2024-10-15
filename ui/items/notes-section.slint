@@ -63,7 +63,7 @@ export component NotesSect inherits Rectangle {
                                 width: 120px;
                                 background-color: #88c0d0;
                                 clicked => {
-                                    TableData.add-files-for-relative(TableData.current_row);
+                                    TableData.add-files-for-relative(TableData.current_row, TableData.active-relative.id);
                                 }
                             }
                         }

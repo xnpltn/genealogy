@@ -233,25 +233,12 @@ CREATE TABLE IF NOT EXISTS file (
 * */
 pub fn add_file() -> String {
     let query = r#"
-               INSERT INTO file (
-                   imported_name,
-                   imported_hash,
-                   relative_id,
-                   type,
-                   size,
-                   filename,
-                   filename_hashname,
-                   file_directory
-               ) VALUES (
-                    $1,
-                    'xzy',
-                    1,
-                    $2,
-                    $3,
-                    $4,
-                    'xzy',
-                    'file'
-               )
+               INSERT INTO file 
+                  (imported_name, imported_hash, relative_id, type, size, filename, filename_hashname, file_directory
+               ) 
+               VALUES 
+                  ( $1,'xzy', $2 , $3, $4, $5,'xzy','files')
+            ;
                
     "#;
 
