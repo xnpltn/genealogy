@@ -58,59 +58,160 @@ export component AddView inherits Rectangle {
                         spacing: 10px;
                         HorizontalBox {
                             spacing: 10px;
-                            first-name := LineEdit {
-                                placeholder-text: "First Name";
+                            VerticalLayout {
+                                Text {
+                                    text: "First Name";
+                                }
+
+                                first-name := LineEdit {
+                                    placeholder-text: "First Name";
+                                }
                             }
 
-                            middle-name := LineEdit {
-                                placeholder-text: "Middle Name";
+                            VerticalLayout {
+                                Text {
+                                    text: "Middle Name";
+                                }
+
+                                middle-name := LineEdit {
+                                    placeholder-text: "Middle Name";
+                                }
                             }
 
-                            last-name := LineEdit {
-                                placeholder-text: "Last Name";
-                            }
-                        }
+                            VerticalLayout {
+                                Text {
+                                    text: "Last Name";
+                                }
 
-                        HorizontalBox {
-                            spacing: 10px;
-                            sex := LineEdit {
-                                placeholder-text: "male or female";
-                                width: 25%;
-                            }
-
-                            birthday := LineEdit {
-                                placeholder-text: "Birthday (YYYY-MM-DD)";
-                                width: 25%;
-                            }
-
-                            phone := LineEdit {
-                                placeholder-text: "Phone";
-                                width: 25%;
-                            }
-                        }
-
-                        HorizontalBox {
-                            spacing: 10px;
-                            email := LineEdit {
-                                placeholder-text: "Email";
-                                width: 40%;
-                            }
-
-                            LineEdit {
-                                placeholder-text: "ATNum";
-                                width: 25%;
-                            }
-
-                            sameness := LineEdit {
-                                placeholder-text: "Sameness";
-                                width: 25%;
+                                last-name := LineEdit {
+                                    placeholder-text: "Last Name";
+                                }
                             }
                         }
 
                         HorizontalBox {
                             spacing: 10px;
-                            lost := LineEdit {
-                                placeholder-text: "Lost Reason";
+                            VerticalLayout {
+                                Text {
+                                    text: "Sex";
+                                }
+
+                                sex := LineEdit {
+                                    placeholder-text: "male or female";
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Birthday";
+                                }
+
+                                birthday := LineEdit {
+                                    placeholder-text: "Birthday (YYYY-MM-DD)";
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Phone";
+                                }
+
+                                phone := LineEdit {
+                                    placeholder-text: "Phone";
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            VerticalLayout {
+                                Text {
+                                    text: "Email";
+                                }
+
+                                email := LineEdit {
+                                    placeholder-text: "Email (me@example.com)";
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "ATNum";
+                                }
+
+                                LineEdit {
+                                    placeholder-text: "ATNum";
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Sameness";
+                                }
+
+                                sameness := LineEdit {
+                                    placeholder-text: "Sameness (0-1, ex: 0.9)";
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            VerticalLayout {
+                                Text {
+                                    text: "Hotness";
+                                }
+
+                                hotness := LineEdit {
+                                    placeholder-text: "hotness (0-10)";
+                                    width: 25%;
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Employable";
+                                }
+
+                                employable := LineEdit {
+                                    placeholder-text: "employable (0-10)";
+                                    width: 25%;
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Swarthy";
+                                }
+
+                                swarthy := LineEdit {
+                                    placeholder-text: "swarthy (0-10)";
+                                    width: 25%;
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Crazy";
+                                }
+
+                                crazy := LineEdit {
+                                    placeholder-text: "crazy (0-10)";
+                                    width: 25%;
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            VerticalLayout {
+                                Text {
+                                    text: "Lost Reason";
+                                }
+
+                                lost := LineEdit {
+                                    placeholder-text: "Lost Reason";
+                                }
                             }
                         }
 
@@ -198,6 +299,10 @@ export component AddView inherits Rectangle {
                                         lost-reason: lost.text,
                                         sameness: sameness.text,
                                         pinned: pinned.checked,
+                                        hotness: hotness.text,
+                                        swarthy: swarthy.text,
+                                        employable: employable.text,
+                                        crazy: crazy.text,
                                     };
                                     TableData.create-new-relative(relative)
                                 }
@@ -416,6 +521,57 @@ export component UpdateView inherits Rectangle {
                                     placeholder-text: "Sameness";
                                     text: TableData.active-relative.sameness;
                                     width: 25%;
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            VerticalLayout {
+                                Text {
+                                    text: "Hotness";
+                                }
+
+                                hotness := LineEdit {
+                                    placeholder-text: "hotness (0-10)";
+                                    width: 25%;
+                                    text: TableData.active-relative.hotness;
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Employable";
+                                }
+
+                                employable := LineEdit {
+                                    placeholder-text: "employable (0-10)";
+                                    width: 25%;
+                                    text: TableData.active-relative.employable;
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Swarthy";
+                                }
+
+                                swarthy := LineEdit {
+                                    placeholder-text: "swarthy (0-10)";
+                                    width: 25%;
+                                    text: TableData.active-relative.swarthy;
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Crazy";
+                                }
+
+                                crazy := LineEdit {
+                                    placeholder-text: "crazy (0-10)";
+                                    width: 25%;
+                                    text: TableData.active-relative.crazy;
                                 }
                             }
                         }

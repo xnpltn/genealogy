@@ -10,7 +10,7 @@ component TableHeader inherits Rectangle {
     in property <string> column2;
 
     HorizontalLayout {
-        alignment: space-between;
+        alignment: space-around;
         Rectangle {
             Text {
                 text: column1;
@@ -20,10 +20,11 @@ component TableHeader inherits Rectangle {
         }
 
         Rectangle {
-            Text {
+            if TableData.files_error != "" && !TableData.has_selected_row:Text {
                 text: column2;
                 font-size: 14px;
                 font-weight: 700;
+                color: red;
             }
         }
     }
@@ -56,17 +57,20 @@ export component NotesSect inherits Rectangle {
                                 vertical-alignment: center;
                             }
 
-                            Button {
-                                text: "Add Files";
+                            CustomButton {
+                                title: "Add Files";
+                                height: 40px;
+                                width: 120px;
+                                background-color: #88c0d0;
                                 clicked => {
-                                    TableData.add-files-for-relative(TableData.current_row)
+                                    TableData.add-files-for-relative(TableData.current_row);
                                 }
                             }
                         }
 
                         TableHeader {
                             column1: "File Name";
-                            column2: "Size";
+                            column2: TableData.files_error;
                         }
 
                         ListView {

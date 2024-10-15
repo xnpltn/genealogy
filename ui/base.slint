@@ -63,9 +63,11 @@ component TaskBar inherits Rectangle {
             text: "Close";
             height: parent.height - 10px;
             clicked => {
+                // reset
                 TableData.error = "";
                 TableData.selected-father-id = -1;
                 TableData.selected-mother-id = -1;
+                TableData.selected-relative-note = "";
                 close-popup()
             }
         }

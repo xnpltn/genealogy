@@ -287,35 +287,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let active_tab = weak_app.unwrap().global::<TableData>().get_active_tab();
             if active_tab == ActiveTab::Relative {
                 let table_data = weak_app.unwrap().global::<TableData>().get_relative();
-                let table_data = table_data.row_data(row as usize).unwrap();
-                if let Some(email) = table_data.row_data(0) {
-                    let email = email.text;
-                    println!("{email}");
-                    let path = FileDialog::new()
-                        .set_location("~/Desktop")
-                        .add_filter("PNG Image", &["png"])
-                        .add_filter("JPEG Image", &["jpg", "jpeg"])
-                        .show_open_single_file()
-                        .unwrap();
+                if let Some(table_data) = table_data.row_data(row as usize) {
+                    if let Some(email) = table_data.row_data(0) {
+                        let email = email.text;
+                        println!("{email}");
+                        let path = FileDialog::new()
+                            .set_location("~/Desktop")
+                            .add_filter("PNG Image", &["png"])
+                            .add_filter("JPEG Image", &["jpg", "jpeg"])
+                            .show_open_single_file()
+                            .unwrap();
 
-                    if let Some(p) = path {
-                        let p = Rc::new(p);
-                        let _ = slint::spawn_local({
-                            let pool = pool.clone();
-                            let xx = Rc::clone(&p);
-                            async move {
-                                let res = sqlx::query(&sql::add_file())
-                                    .bind(xx.to_str().unwrap().to_string())
-                                    .bind(xx.extension().unwrap().to_str().unwrap().to_string())
-                                    .execute(&pool)
-                                    .await;
-                                match res {
-                                    Ok(_) => println!("created"),
-                                    Err(e) => println!("{}", e.to_string()),
+                        if let Some(p) = path {
+                            let p = Rc::new(p);
+                            let _ = slint::spawn_local({
+                                let pool = pool.clone();
+                                let xx = Rc::clone(&p);
+                                async move {
+                                    let res = sqlx::query(&sql::add_file())
+                                        .bind(xx.to_str().unwrap().to_string())
+                                        .bind(xx.extension().unwrap().to_str().unwrap().to_string())
+                                        .execute(&pool)
+                                        .await;
+                                    match res {
+                                        Ok(_) => println!("created"),
+                                        Err(e) => println!("{}", e.to_string()),
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
+                } else {
+                    weak_app
+                        .unwrap()
+                        .global::<TableData>()
+                        .set_files_error(SharedString::from("Select a relative to add files for!"));
                 }
             }
         }
@@ -502,7 +508,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
                     } else if mother_id_db <= 0 && father_id_db <= 0 {
-                        println!("no parents")
+                        // create relative with no parents
+                        let res = sqlx::query(&sql::create_new_relative_no_parents())
+                            .bind(relative.sameness.to_string())
+                            .bind(relative.lost_reason.to_string())
+                            .bind(relative.sex.to_string())
+                            .bind(relative.birthday.to_string())
+                            .bind(relative.first_name.to_string())
+                            .bind(relative.middle_name.to_string())
+                            .bind(relative.last_name.to_string())
+                            .bind(relative.phone.to_string())
+                            .bind(relative.email.to_string())
+                            .bind(relative.pinned)
+                            .execute(&pool)
+                            .await;
+                        match res {
+                            Ok(_) => {
+                                let females = get_female_relatives(&pool).await.unwrap();
+                                let relatives = get_all_relative(&pool).await.unwrap();
+
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_females(females.clone().into());
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_relative(relatives.clone().into());
+                            }
+                            Err(e) => {
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_error(e.to_string().into());
+                            }
+                        }
                     }
                 }
             });
@@ -532,6 +572,11 @@ async fn get_relative_data(
     let pinned: bool = row.get("pinned");
     let sameness: f32 = row.get("sameness");
     let sex: String = row.get("sex");
+    let hotness: i32 = row.get("hotness");
+    let crazy: i32 = row.get("crazy");
+    let swarthy: i32 = row.get("swarthy");
+    let employable: i32 = row.get("employable");
+
     let relative = Relative {
         id: slint::format!("{id}"),
         first_name: fname.into(),
@@ -545,6 +590,10 @@ async fn get_relative_data(
         sameness: slint::format!("{}", sameness),
         sex: sex.into(),
         note: "".into(),
+        hotness: slint::format!("{hotness}"),
+        crazy: slint::format!("{crazy}"),
+        swarthy: slint::format!("{swarthy}"),
+        employable: slint::format!("{employable}"),
     };
 
     Ok(relative)

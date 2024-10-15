@@ -12,6 +12,10 @@ export struct Relative {
     lost-reason: string,
     sameness: string,
     note: string,
+    hotness: string,
+    swarthy: string,
+    crazy:string,
+    employable: string,
 }
 
 export enum ActiveTab{relative, employees, females}
@@ -34,6 +38,7 @@ export global TableData {
     callback create-new-relative(Relative);
     callback update-relative(string, Relative); // first parameter is an id used to track the relative
     in-out property <string> error;
+    in-out property <string> files_error;
     in-out property <string> mother-phone;
     in-out property <string> father-phone;
     callback add-files-for-relative(int);

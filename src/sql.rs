@@ -1,5 +1,3 @@
-use sqlx::query;
-
 pub fn create_new_relative_no_parents() -> String {
     let query = r#"
             INSERT INTO relative 
@@ -97,17 +95,7 @@ pub fn get_female_relatives() -> String {
 pub fn get_one_relative_data() -> String {
     let query = r#"
         SELECT
-            id,
-            fname,
-            mname,
-            lname,
-            email,
-            phone,
-            birthday,
-            sex,
-            sameness,
-            pinned,
-            lost_reason
+            *
         FROM
             relative
         WHERE 
