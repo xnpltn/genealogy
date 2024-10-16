@@ -109,3 +109,24 @@ FOR EACH ROW
 BEGIN
     UPDATE note SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
+
+
+
+CREATE TABLE IF NOT EXISTS image (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    relative_id      INTEGER NOT NULL,
+    filename             TEXT NOT NULL,
+    FOREIGN KEY      (relative_id) REFERENCES relative(id) ON DELETE CASCADE
+);
+
+
+
+-- Trigger for updating updated_at on notes
+CREATE TRIGGER IF NOT EXISTS update_image_updated_at
+AFTER UPDATE ON image
+FOR EACH ROW
+BEGIN
+    UPDATE image SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;

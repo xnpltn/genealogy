@@ -2,6 +2,7 @@ import { CustomButton } from "../components/button.slint";
 import { Button, CheckBox, Switch, HorizontalBox, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox, Palette, StandardTableView , ScrollView, TextEdit} from "std-widgets.slint";
 import { TableData , Relative} from "../types.slint";
 
+
 export component Header inherits Rectangle {
     in-out property <bool> dark-mode;
     in-out property <string> title;
@@ -309,46 +310,41 @@ export component AddView inherits Rectangle {
                             }
                         }
 
+                        /*
                         HorizontalBox {
-                            Rectangle {
-                                height: 100px;
-                                width: 100px;
-                                border-radius: 5px;
-                                background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
-                                Text {
-                                    text: "Image";
-                                    color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
+                            width: 100%;
+                            VerticalLayout {
+                                alignment: center;
+                                Rectangle {
+                                    height: 100px;
+                                    width: 100px;
+                                    border-radius: 5px;
+                                    background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
+                                    Text {
+                                        text: "Image";
+                                        color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
+                                    }
                                 }
                             }
 
-                            CustomButton {
-                                title: "Upload Photo";
-                                height: 30px;
-                                background: Palette.color-scheme == ColorScheme.dark ? #5e81ac : #81a1c1;
+                            VerticalLayout {
+                                alignment: center;
+                                CustomButton {
+                                    title: "Upload Photo";
+                                    height: 40px;
+                                    width: 120px;
+                                    background: Palette.color-scheme == ColorScheme.dark ? #5e81ac : #81a1c1;
+                                }
                             }
                         }
+                        */
                     }
                 }
 
-                GroupBox {
+                /*GroupBox {
                     title: "Family Information";
                     VerticalLayout {
                         spacing: 10px;
-                        HorizontalLayout {
-                            alignment: space-around;
-                            CustomButton {
-                                height: 40px;
-                                width: 120px;
-                                title: @tr("Add Mother");
-                            }
-
-                            CustomButton {
-                                height: 40px;
-                                width: 120px;
-                                title: @tr("Add Father");
-                            }
-                        }
-
                         HorizontalLayout {
                             spacing: 10px;
                             StandardTableView {
@@ -374,11 +370,13 @@ export component AddView inherits Rectangle {
                             CustomButton {
                                 height: 40px;
                                 width: 120px;
+                                background-color: green;
                                 title: @tr("Pin/Unpin record");
                             }
                         }
                     }
                 }
+                */
             }
         }
     }
@@ -658,46 +656,45 @@ export component UpdateView inherits Rectangle {
                             }
                         }
 
+                        /*
                         HorizontalBox {
-                            alignment: space-between;
-                            Rectangle {
-                                height: parent.width * 20%;
-                                border-radius: 5px;
-                                background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
-                                Text {
-                                    text: "Image";
-                                    color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
+                            width: 100%;
+                            VerticalLayout {
+                                alignment: center;
+                                Rectangle {
+                                    height: 100px;
+                                    width: 100px;
+                                    border-radius: 5px;
+                                    background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
+                                    if TableData.active-relative-image == "":Text {
+                                        text: "Image";
+                                        color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
+                                    }
+                                    if TableData.active-relative-image != "": Image { }
                                 }
                             }
 
-                            CustomButton {
-                                title: "Upload Photo";
-                                height: 30px;
-                                background: Palette.color-scheme == ColorScheme.dark ? #5e81ac : #81a1c1;
+                            VerticalLayout {
+                                alignment: center;
+                                CustomButton {
+                                    title: "Upload Photo";
+                                    height: 40px;
+                                    width: 120px;
+                                    background: Palette.color-scheme == ColorScheme.dark ? #5e81ac : #81a1c1;
+                                    clicked => {
+                                        TableData.add-image-for-relative(TableData.active-relative.id);
+                                    }
+                                }
                             }
                         }
+                        */
                     }
                 }
 
                 GroupBox {
-                    title: "Family Information";
                     VerticalLayout {
                         spacing: 10px;
-                        HorizontalLayout {
-                            alignment: space-around;
-                            CustomButton {
-                                height: 40px;
-                                width: 120px;
-                                title: @tr("Add Mother");
-                            }
-
-                            CustomButton {
-                                height: 40px;
-                                width: 120px;
-                                title: @tr("Add Father");
-                            }
-                        }
-
+                        /*
                         HorizontalLayout {
                             spacing: 10px;
                             StandardTableView {
@@ -716,15 +713,16 @@ export component UpdateView inherits Rectangle {
                                 ];
                             }
                         }
+                        */
 
                         HorizontalLayout {
                             alignment: space-around;
-                            CustomButton {
+                            /*CustomButton {
                                 height: 40px;
                                 width: 120px;
                                 title: @tr("Pin/Unpin record");
                                 background: #16a;
-                            }
+                            }*/
 
                             CustomButton {
                                 height: 40px;

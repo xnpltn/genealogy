@@ -35,14 +35,18 @@ export global TableData {
     callback current-row-changed(int);
     in-out property <Relative> active-relative;
     in-out property <Relative> new-relative;
+    in-out property <string> active-relative-image;
     callback create-new-relative(Relative);
     callback update-relative(string, Relative); // first parameter is an id used to track the relative
     callback delete-relative(string);
     in-out property <string> error;
+    in-out property <string> success-msg;
+    in-out property <string> image-error;
     in-out property <string> files_error;
     in-out property <string> mother-phone;
     in-out property <string> father-phone;
     callback add-files-for-relative(int, string);
+    callback add-image-for-relative(string);
     callback add-note-for-relative(int);
     in-out property <[string]> selected-relative-files;
     in-out property <string> selected-relative-note;

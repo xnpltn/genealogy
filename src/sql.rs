@@ -1,40 +1,40 @@
 pub fn create_new_relative_no_parents() -> String {
     let query = r#"
-            INSERT INTO relative 
-                (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned)
-            VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            "#;
+        INSERT INTO relative 
+            (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, employable, swarthy, hotness, crazy)
+        VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        "#;
     query.to_string()
 }
 
 pub fn create_new_relative_with_mother_only() -> String {
     let query = r#"
-            INSERT INTO relative 
-                (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, mother_id)
-            VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            "#;
+        INSERT INTO relative 
+            (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, mother_id, employable, swarthy, hotness, crazy)
+    VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        "#;
     query.to_string()
 }
 
 pub fn create_new_relative_with_father_only() -> String {
     let query = r#"
-            INSERT INTO relative 
-                (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, father_id)
-            VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            "#;
+        INSERT INTO relative 
+            (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, father_id, employable, swarthy, hotness, crazy)
+        VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+"#;
     query.to_string()
 }
 
 pub fn create_new_relative_with_both_parents() -> String {
     let query = r#"
-            INSERT INTO relative 
-                (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, mother_id, father_id)
-            VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            "#;
+        INSERT INTO relative 
+            (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, mother_id, father_id, employable, swarthy, hotness, crazy)
+        VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+"#;
     query.to_string()
 }
 
@@ -89,6 +89,19 @@ pub fn get_female_relatives() -> String {
         ;
     "#;
 
+    query.to_string()
+}
+
+pub fn get_all_employees() -> String {
+    let query = r#"
+        SELECT 
+            *
+        FROM 
+            relative 
+        WHERE 
+            employable > 0
+        ;
+    "#;
     query.to_string()
 }
 
@@ -213,24 +226,6 @@ pub fn get_males() -> String {
     query.to_string()
 }
 
-/*
-*
-
-CREATE TABLE IF NOT EXISTS file (
-    imported_at         DATETIME DEFAULT CURRENT_TIMESTAMP,
-    imported_name       TEXT NOT NULL,
-    imported_hash       TEXT NOT NULL,
-    relative_id      INTEGER PRIMARY KEY NOT NULL,
-    type                TEXT NOT NULL,
-    size                TEXT NOT NULL,
-    filename            TEXT NOT NULL,
-    filename_timestamp  DATETIME DEFAULT CURRENT_TIMESTAMP,
-    filename_hashname   TEXT NOT NULL,
-    file_directory      TEXT NOT NULL,
-    pinned              BOOLEAN DEFAULT 0,
-    FOREIGN KEY         (relative_id) REFERENCES relative(id)
-);
-* */
 pub fn add_file() -> String {
     let query = r#"
                INSERT INTO file 
@@ -259,6 +254,16 @@ pub fn get_note_for_relative() -> String {
         SELECT * FROM note WHERE relative_id = (
             SELECT id FROM relative WHERE id = $1
         );
+    "#;
+    query.to_string()
+}
+
+pub fn add_image_for_relative() -> String {
+    let query = r#"
+        INSERT INTO image
+            (filename, relative_id)
+        VALUES ($1, $2)
+        ;
     "#;
     query.to_string()
 }

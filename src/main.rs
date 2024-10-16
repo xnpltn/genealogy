@@ -35,8 +35,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
+    let mut images_dir: String = std::format!("{work_dir}/images");
+    let mut files_dir: String = std::format!("{work_dir}/files");
+
+    match fs::create_dir(files_dir.clone()) {
+        Ok(()) => {}
+        Err(e) => {
+            if e.kind() != io::ErrorKind::AlreadyExists {
+                println!("error: {}", e);
+                fs::create_dir("{work_dir}/files").unwrap();
+                files_dir = std::format!("{work_dir}/files");
+            }
+        }
+    }
+
+    match fs::create_dir(images_dir.clone()) {
+        Ok(()) => {}
+        Err(e) => {
+            if e.kind() != io::ErrorKind::AlreadyExists {
+                println!("error: {}", e);
+                fs::create_dir("{work_dir}/images").unwrap();
+                images_dir = std::format!("{work_dir}/images");
+            }
+        }
+    }
 
     println!("{work_dir}");
+    println!("{files_dir}");
+    println!("{images_dir}");
     if !Sqlite::database_exists(std::format!("{}/store.db", work_dir).as_str())
         .await
         .unwrap_or(false)
@@ -51,6 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let females = get_female_relatives(&pool).await?;
     let relatives = get_all_relative(&pool).await?;
+    let employees = get_all_employees(&pool).await?;
     let males = get_male_relatives(&pool).await?;
     let females2 = get_mothers(&pool).await?;
 
@@ -58,6 +85,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .set_females(females.clone().into());
     app.global::<TableData>()
         .set_relative(relatives.clone().into());
+
+    app.global::<TableData>()
+        .set_employees(employees.clone().into());
 
     app.global::<TableData>().on_current_row_changed({
         let weak_app = app.as_weak();
@@ -206,6 +236,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Ok(_) => {
                                 let females = get_female_relatives(&pool).await.unwrap();
                                 let relatives = get_all_relative(&pool).await.unwrap();
+                                let employees = get_all_employees(&pool).await.unwrap();
+                                let males = get_male_relatives(&pool).await.unwrap();
+                                let females2 = get_mothers(&pool).await.unwrap();
 
                                 weak_app
                                     .unwrap()
@@ -215,6 +248,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .unwrap()
                                     .global::<TableData>()
                                     .set_relative(relatives.clone().into());
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_males(males.clone().into());
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_females2(females2.clone().into());
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_employees(employees.clone().into());
+
                                 println!("updated successfully");
                             }
                             Err(e) => {
@@ -245,6 +291,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Ok(_) => {
                                 let females = get_female_relatives(&pool).await.unwrap();
                                 let relatives = get_all_relative(&pool).await.unwrap();
+                                let employees = get_all_employees(&pool).await.unwrap();
+                                let males = get_male_relatives(&pool).await.unwrap();
+                                let females2 = get_mothers(&pool).await.unwrap();
 
                                 weak_app
                                     .unwrap()
@@ -254,6 +303,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .unwrap()
                                     .global::<TableData>()
                                     .set_relative(relatives.clone().into());
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_males(males.clone().into());
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_females2(females2.clone().into());
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_employees(employees.clone().into());
+
                                 println!("updated mother successfully");
                             }
                             Err(e) => {
@@ -284,6 +346,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Ok(_) => {
                                 let females = get_female_relatives(&pool).await.unwrap();
                                 let relatives = get_all_relative(&pool).await.unwrap();
+                                let employees = get_all_employees(&pool).await.unwrap();
+                                let males = get_male_relatives(&pool).await.unwrap();
+                                let females2 = get_mothers(&pool).await.unwrap();
 
                                 weak_app
                                     .unwrap()
@@ -293,7 +358,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .unwrap()
                                     .global::<TableData>()
                                     .set_relative(relatives.clone().into());
-                                println!("updated father successfully");
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_males(males.clone().into());
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_females2(females2.clone().into());
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_employees(employees.clone().into());
                             }
                             Err(e) => {
                                 weak_app
@@ -305,6 +381,70 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             });
+        }
+    });
+
+    app.global::<TableData>().on_add_image_for_relative({
+        let weak_app = app.as_weak();
+        let pool = pool.clone();
+        move |id| {
+            let weak_app = weak_app.unwrap().as_weak();
+            if id == "" {
+                weak_app
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_files_error(SharedString::from(
+                        "No selected relative, click on one row.",
+                    ));
+            } else {
+                if let Some(path) = FileDialog::new()
+                    .set_location("~/Desktop")
+                    .add_filter("Image", &["jpg", "jpeg", "png"])
+                    .show_open_single_file()
+                    .unwrap()
+                {
+                    let images_dir = images_dir.clone();
+                    let _ = slint::spawn_local({
+                        let weak_app = weak_app.unwrap().as_weak();
+                        let pool = pool.clone();
+                        if let Ok(_) = fs::copy(
+                            path.to_str().unwrap(),
+                            std::format!(
+                                "{images_dir}/{id}-{}",
+                                path.file_name().unwrap().to_str().unwrap().to_string()
+                            ),
+                        ) {
+                        } else {
+                            weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_image_error(SharedString::from("Can't add image"));
+                            println!("error adding photo");
+                            return;
+                        };
+                        async move {
+                            match sqlx::query(&sql::add_image_for_relative())
+                                .bind(std::format!(
+                                    "{images_dir}/{id}-{}",
+                                    path.file_name().unwrap().to_str().unwrap().to_string()
+                                ))
+                                .bind(id.to_string())
+                                .execute(&pool)
+                                .await
+                            {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    println!("error: {}", e.to_string());
+                                    weak_app
+                                        .unwrap()
+                                        .global::<TableData>()
+                                        .set_image_error(SharedString::from("Can't add image"));
+                                }
+                            }
+                        }
+                    });
+                }
+            }
         }
     });
 
@@ -341,14 +481,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 let p = Rc::new(p);
                                 let mut size: u64 = 0;
 
-                                let work_dir = work_dir.clone();
+                                let files_dir = files_dir.clone();
                                 let _ = slint::spawn_local({
                                     let pool = pool.clone();
                                     let xx = Rc::clone(&p);
                                     match fs::copy(
                                         xx.to_str().unwrap(),
                                         std::format!(
-                                            "{work_dir}/{email}-{}",
+                                            "{files_dir}/{email}-{}",
                                             xx.file_name().unwrap().to_str().unwrap().to_string()
                                         ),
                                     ) {
@@ -371,10 +511,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                             //    }
                                             //}
                                         }
-                                        Err(_) => weak_app
-                                            .unwrap()
-                                            .global::<TableData>()
-                                            .set_files_error(SharedString::from("can't add file")),
+                                        Err(_) => {
+                                            weak_app
+                                                .unwrap()
+                                                .global::<TableData>()
+                                                .set_files_error(SharedString::from(
+                                                    "can't add file",
+                                                ));
+                                            return;
+                                        }
                                     }
 
                                     async move {
@@ -422,6 +567,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let weak_app = app.as_weak();
         let pool = pool.clone();
         move |relative| {
+            println!(
+                "{} {} {} {}",
+                relative.employable, relative.hotness, relative.swarthy, relative.crazy
+            );
             let pool = pool.clone();
             let weak_app = weak_app.clone();
             let mut mother_phone = String::new();
@@ -498,6 +647,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .bind(relative.pinned)
                             .bind(mother_id_db)
                             .bind(father_id_db)
+                            .bind(relative.employable.to_string())
+                            .bind(relative.swarthy.to_string())
+                            .bind(relative.hotness.to_string())
+                            .bind(relative.crazy.to_string())
                             .execute(&pool)
                             .await;
                         match res {
@@ -536,6 +689,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .bind(relative.email.to_string())
                             .bind(relative.pinned)
                             .bind(mother_id_db)
+                            .bind(relative.employable.to_string())
+                            .bind(relative.swarthy.to_string())
+                            .bind(relative.hotness.to_string())
+                            .bind(relative.crazy.to_string())
                             .execute(&pool)
                             .await;
                         match res {
@@ -574,6 +731,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .bind(relative.email.to_string())
                             .bind(relative.pinned)
                             .bind(father_id_db)
+                            .bind(relative.employable.to_string())
+                            .bind(relative.swarthy.to_string())
+                            .bind(relative.hotness.to_string())
+                            .bind(relative.crazy.to_string())
                             .execute(&pool)
                             .await;
                         match res {
@@ -611,6 +772,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .bind(relative.phone.to_string())
                             .bind(relative.email.to_string())
                             .bind(relative.pinned)
+                            .bind(relative.employable.to_string())
+                            .bind(relative.swarthy.to_string())
+                            .bind(relative.hotness.to_string())
+                            .bind(relative.crazy.to_string())
                             .execute(&pool)
                             .await;
                         match res {
@@ -862,4 +1027,59 @@ async fn get_mothers(
         females.push(items.into());
     }
     Ok(females)
+}
+
+async fn get_all_employees(
+    pool: &SqlitePool,
+) -> Result<Rc<VecModel<ModelRc<StandardListViewItem>>>, Box<dyn std::error::Error>> {
+    let relatives: Rc<VecModel<slint::ModelRc<StandardListViewItem>>> =
+        Rc::new(VecModel::default());
+    let rows = sqlx::query(&sql::get_all_employees())
+        .fetch_all(pool)
+        .await?;
+    for row in rows {
+        let items = Rc::new(VecModel::default());
+        let id: i32 = row.get("id");
+        let name: String = row.get("full_name");
+        let age: i32 = row.get("age");
+        let sameness: f32 = row.try_get("sameness").unwrap_or(0.0.into());
+        let mother_id: i32 = row.try_get("mother_id").unwrap_or(0);
+        let father_id: i32 = row.try_get("father_id").unwrap_or(0);
+        let phone: String = row.try_get("phone").unwrap_or("null".into());
+        let email: String = row.try_get("email").unwrap_or("null".into());
+        let lost_reason: String = row.try_get("lost_reason").unwrap_or("null".into());
+        let pinned: bool = row.try_get("pinned").unwrap_or(false);
+        let create_at: String = row.try_get("created_at").unwrap_or("null".into());
+        let updated_at: String = row.try_get("updated_at").unwrap_or("null".into());
+
+        let mquery = "select full_name from relative where id=$1";
+        let fquery = "select full_name from relative where id=$1";
+
+        let mut mother: String = String::from("null");
+        let mut father: String = String::from("null");
+
+        if mother_id > 0 {
+            let mrow = sqlx::query(mquery).bind(mother_id).fetch_one(pool).await?;
+            mother = mrow.try_get("full_name").unwrap_or("".to_string());
+        }
+
+        if father_id > 0 {
+            let prow = sqlx::query(fquery).bind(father_id).fetch_one(pool).await?;
+            father = prow.try_get("full_name").unwrap_or("".to_string());
+        }
+        items.push(slint::format!("{id}").into());
+        items.push(slint::format!("{name}").into());
+        items.push(slint::format!("{age}").into());
+        items.push(slint::format!("{sameness}").into());
+        items.push(slint::format!("{mother}").into());
+        items.push(slint::format!("{father}").into());
+        items.push(slint::format!("{phone}").into());
+        items.push(slint::format!("{email}").into());
+        items.push(slint::format!("{pinned}").into());
+        items.push(slint::format!("{lost_reason}").into());
+        items.push(slint::format!("{create_at}").into());
+        items.push(slint::format!("{updated_at}").into());
+        relatives.push(items.into());
+    }
+    Ok(relatives)
 }
