@@ -1,0 +1,256 @@
+import { CustomButton } from "../components/button.slint";
+import { Button, CheckBox, Switch, HorizontalBox, Slider, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox, Palette, StandardTableView , ScrollView, TextEdit} from "std-widgets.slint";
+import { TableData , Relative} from "../types.slint";
+
+export component AddView inherits Rectangle {
+    in-out property <Relative> relative;
+    in-out property <string> name;
+    border-radius: 10px;
+    VerticalLayout {
+        spacing: 10px;
+        padding: 10px;
+        ScrollView {
+            VerticalLayout {
+                spacing: 15px;
+                GroupBox {
+                    title: "Personal Information";
+                    VerticalLayout {
+                        spacing: 10px;
+                        HorizontalBox {
+                            spacing: 10px;
+                            VerticalLayout {
+                                Text {
+                                    text: "First Name";
+                                }
+
+                                first-name := LineEdit {
+                                    placeholder-text: "First Name";
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Middle Name";
+                                }
+
+                                middle-name := LineEdit {
+                                    placeholder-text: "Middle Name";
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Last Name";
+                                }
+
+                                last-name := LineEdit {
+                                    placeholder-text: "Last Name";
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            VerticalLayout {
+                                Text {
+                                    text: "Sex";
+                                }
+
+                                sex := ComboBox {
+                                    width: 25%;
+                                    model: ["male", "female"];
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Birthday";
+                                }
+
+                                birthday := LineEdit {
+                                    placeholder-text: "Birthday (YYYY-MM-DD)";
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Phone";
+                                }
+
+                                phone := LineEdit {
+                                    placeholder-text: "Phone";
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            VerticalLayout {
+                                Text {
+                                    text: "Email";
+                                }
+
+                                email := LineEdit {
+                                    placeholder-text: "Email (me@example.com)";
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Sameness";
+                                }
+
+                                sameness := LineEdit {
+                                    placeholder-text: "Sameness (0-1, ex: 0.9)";
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            VerticalLayout {
+                                Text {
+                                    text: @tr("Hotness | {}", hotness.value);
+                                }
+
+                                hotness := Slider {
+                                    minimum: 0;
+                                    maximum: 10;
+                                    width: 25%;
+                                    enabled: sex.current-value == sex.model[1];
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: @tr("Employable| {}", employable.value);
+                                }
+
+                                employable := Slider {
+                                    minimum: 0;
+                                    maximum: 10;
+                                    width: 25%;
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: @tr("Swarthy| {}", swarthy.value);
+                                }
+
+                                swarthy := Slider {
+                                    minimum: 0;
+                                    maximum: 10;
+                                    width: 25%;
+                                    enabled: sex.current-value == sex.model[1];
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: @tr("Crazy  | {}",crazy.value);
+                                }
+
+                                crazy := Slider {
+                                    minimum: 0;
+                                    maximum: 10;
+                                    width: 25%;
+                                    enabled: sex.current-value == sex.model[1];
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            VerticalLayout {
+                                Text {
+                                    text: "Lost Reason";
+                                }
+
+                                lost := LineEdit {
+                                    placeholder-text: "Lost Reason";
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            pinned := CheckBox {
+                                text: "Pinned";
+                            }
+                        }
+
+                        HorizontalBox {
+                            spacing: 10px;
+                            alignment: space-around;
+                            VerticalLayout {
+                                Text {
+                                    text: "Choose Mother";
+                                }
+
+                                mother-table := StandardTableView {
+                                    width: 300px;
+                                    height: 150px;
+                                    columns: [
+                                        { title: "Name" },
+                                        { title: "age" },
+                                        { title: "phone" },
+                                    ];
+                                    rows: TableData.females2;
+                                    current-row-changed(i) => {
+                                        TableData.selected-mother-id = i;
+                                    }
+                                }
+                            }
+
+                            VerticalLayout {
+                                Text {
+                                    text: "Choose Father";
+                                }
+
+                                father-table := StandardTableView {
+                                    width: 300px;
+                                    height: 150px;
+                                    columns: [
+                                        { title: "Name" },
+                                        { title: "age" },
+                                        { title: "phone" },
+                                    ];
+                                    rows: TableData.males;
+                                    current-row-changed(i) => {
+                                        TableData.selected-father-id = i;
+                                    }
+                                }
+                            }
+                        }
+
+                        HorizontalBox {
+                            Button {
+                                text: "Save";
+                                clicked => {
+                                    relative = {
+                                        first-name: first-name.text,
+                                        middle-name: middle-name.text,
+                                        last-name: last-name.text,
+                                        sex: sex.current-value,
+                                        phone: phone.text,
+                                        email: email.text,
+                                        birthday: birthday.text,
+                                        lost-reason: lost.text,
+                                        sameness: sameness.text,
+                                        pinned: pinned.checked,
+                                        hotness: hotness.value,
+                                        employable: employable.value,
+                                        crazy: crazy.value,
+                                        swarthy: swarthy.value,
+                                    };
+                                    TableData.create-new-relative(relative)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

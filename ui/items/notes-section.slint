@@ -2,6 +2,7 @@ import {Palette,  Button, ScrollView, StandardTableView, TabWidget, VerticalBox 
 import { TableData } from "../types.slint";
 import { CustomButton } from "../components/button.slint";
 import { ListView } from "std-widgets.slint";
+import { TaskBar } from "../components/TaskBar.slint";
 
 
 
@@ -34,87 +35,134 @@ export component NotesSect inherits Rectangle {
     property <string> active_note: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua...";
     background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #eceff4;
     border-radius: 10px;
+    callback open-note-popup();
 
     HorizontalLayout {
         padding: 16px;
         spacing: 16px;
 
-        Rectangle {
-            width: 50%;
-            TabWidget {
-                Tab {
-                    title: "Files";
-                    VerticalLayout {
-                        spacing: 10px;
-                        padding: 10px;
+        VerticalLayout {
+            if TableData.has_selected_row: TaskBar {
+                alignment: LayoutAlignment.end;
+                h: 20px;
+                CustomButton {
+                    background: red;
+                    height: 40px;
+                    width: 100px;
+                    title: "Edit";
+                    clicked => {
+                        TableData.show-update-window();
+                    }
+                }
+            }
 
-                        HorizontalLayout {
+            Rectangle {
+                width: 50%;
+                TabWidget {
+                    Tab {
+                        title: "Files";
+                        VerticalLayout {
                             spacing: 10px;
-                            Text {
-                                text: "Files";
-                                font-size: 20px;
-                                font-weight: 700;
-                                vertical-alignment: center;
-                            }
+                            padding: 10px;
 
-                            CustomButton {
-                                title: "Add Files";
-                                height: 40px;
-                                width: 120px;
-                                background-color: #88c0d0;
-                                clicked => {
-                                    TableData.add-files-for-relative(TableData.current_row, TableData.active-relative.id);
+                            HorizontalLayout {
+                                spacing: 10px;
+                                Text {
+                                    text: "Files";
+                                    font-size: 20px;
+                                    font-weight: 700;
+                                    vertical-alignment: center;
+                                }
+
+                                CustomButton {
+                                    visible: TableData.active-relative.id != "";
+                                    title: "Add Files";
+                                    height: 40px;
+                                    width: 120px;
+                                    background-color: #12d;
+                                    clicked => {
+                                        TableData.add-files-for-relative(TableData.current_row, TableData.active-relative.id);
+                                    }
                                 }
                             }
-                        }
 
-                        TableHeader {
-                            column1: "File Name";
-                            column2: TableData.files_error;
-                        }
+                            if TableData.files_error != "": TableHeader {
+                                column2: TableData.files_error;
+                            }
 
-                        ListView {
-                            for data in TableData.selected-relative-files: Rectangle {
-                                HorizontalLayout {
-                                    Text {
-                                        text: data;
-                                        font-size: 20px;
-                                        color: #012;
+                            Rectangle {
+                                border-color: #12d;
+                                border-radius: 2px;
+                                border-width: 2px;
+                                padding: 40px;
+
+                                ListView {
+                                    for file in TableData.selected-relative-files: Rectangle {
+                                        border-radius: 2px;
+                                        border-width: 2px;
+                                        padding: 10px;
+                                        HorizontalLayout {
+                                            alignment: start;
+                                            Text {
+                                                text: file;
+                                                font-size: 20px;
+                                                color: #012;
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                Tab {
-                    title: "Notes";
-                    VerticalLayout {
-                        spacing: 10px;
-                        padding: 10px;
-
-                        HorizontalLayout {
-                            spacing: 10px;
-                            Text {
-                                text: "Notes";
-                                font-size: 20px;
-                                font-weight: 700;
-                                vertical-alignment: center;
-                            }
-
-                            CustomButton {
-                                height: 40px;
-                                width: 120px;
-                                title: "Add Note";
-                                background: #12e;
-                            }
-                        }
-
+                    Tab {
+                        title: "Notes";
                         VerticalLayout {
+                            spacing: 10px;
+
+                            HorizontalLayout {
+                                spacing: 10px;
+                                Text {
+                                    text: "Notes";
+                                    font-size: 20px;
+                                    font-weight: 700;
+                                    vertical-alignment: center;
+                                }
+
+                                CustomButton {
+                                    visible: TableData.active-relative.id != "";
+                                    height: 40px;
+                                    width: 120px;
+                                    title: "Add Note";
+                                    background: #12d;
+                                    clicked => {
+                                        open-note-popup()
+                                    }
+                                }
+                            }
+
+                            if TableData.notes-error != "": TableHeader {
+                                column2: TableData.notes-error;
+                            }
                             Rectangle {
-                                HorizontalLayout {
-                                    Text {
-                                        text: TableData.selected-relative-note;
+                                border-color: #12d;
+                                border-radius: 2px;
+                                border-width: 2px;
+                                padding: 40px;
+
+                                ListView {
+                                    for note in TableData.selected-relative-notes: Rectangle {
+                                        border-radius: 2px;
+                                        border-width: 2px;
+                                        padding: 10px;
+                                        HorizontalLayout {
+                                            alignment: start;
+                                            Text {
+                                                text: note;
+                                                font-size: 20px;
+                                                color: #012;
+                                            }
+                                        }
                                     }
                                 }
                             }

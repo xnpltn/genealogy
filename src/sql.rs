@@ -67,18 +67,7 @@ pub fn get_all_relatives() -> String {
 pub fn get_female_relatives() -> String {
     let query = r#"
         SELECT 
-            id,
-            full_name,
-            age,
-            email,
-            phone,
-            lost_reason,
-            sameness,
-            father_id,
-            mother_id,
-            pinned,
-            created_at,
-            updated_at
+            *
         FROM 
             relative
         WHERE
@@ -249,7 +238,7 @@ pub fn get_files_for_relative() -> String {
     query.to_string()
 }
 
-pub fn get_note_for_relative() -> String {
+pub fn get_notes_for_relative() -> String {
     let query = r#"
         SELECT * FROM note WHERE relative_id = (
             SELECT id FROM relative WHERE id = $1
@@ -265,5 +254,15 @@ pub fn add_image_for_relative() -> String {
         VALUES ($1, $2)
         ;
     "#;
+    query.to_string()
+}
+
+pub fn add_note_for_relative() -> String {
+    let query = r#"
+        INSERT INTO note
+            (relative_id, text)
+        VALUES
+            ($1, $1)
+    ;"#;
     query.to_string()
 }

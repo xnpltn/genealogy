@@ -2,6 +2,7 @@
 name = "genealogy"
 version = "0.1.0"
 edition = "2021"
+description= "A desktop Application"
 
 [dependencies]
 native-dialog = "0.7.0"
@@ -13,3 +14,10 @@ tokio = { version = "1.20.0", features = ["full"] }
 [build-dependencies]
 slint-build = "1.7.0"
 tokio = { version = "1.20.0", features =["full"]}
+
+[package.metadata.bundle]
+name = "GeneApp"
+# format for the identifier "io.github.username.project"
+# you might want to change it for real information
+identifier = "io.github.username.project"
+icon= "./logo.png" # create logo.

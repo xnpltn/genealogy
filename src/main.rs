@@ -60,20 +60,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("{work_dir}");
-    println!("{files_dir}");
-    println!("{images_dir}");
+    println!("App directory at: {work_dir}");
+    println!("Files directory {files_dir}");
     if !Sqlite::database_exists(std::format!("{}/store.db", work_dir).as_str())
         .await
         .unwrap_or(false)
     {
         Sqlite::create_database(std::format!("{}/store.db", work_dir).as_str()).await?;
-        println!("db creation done");
+        println!("No Database found.");
+        println!("Creating new");
+    } else {
+        println!("Database Connected");
     }
 
     let pool = SqlitePool::connect(std::format!("{}/store.db", work_dir).as_str()).await?;
     migrate!("./migrations").run(&pool).await?;
     let app = Main::new()?;
+    let update_window = UpdateWindow::new()?;
+    let create_window = CreateWindow::new()?;
 
     let females = get_female_relatives(&pool).await?;
     let relatives = get_all_relative(&pool).await?;
@@ -88,72 +92,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     app.global::<TableData>()
         .set_employees(employees.clone().into());
-
-    app.global::<TableData>().on_current_row_changed({
-        let weak_app = app.as_weak();
-        let pool = pool.clone();
-        move |row| {
-            let active_tab = weak_app.unwrap().global::<TableData>().get_active_tab();
-            if active_tab == ActiveTab::Relative {
-                let table_data = weak_app.unwrap().global::<TableData>().get_relative();
-                let table_data = table_data.row_data(row as usize).unwrap();
-                if let Some(email) = table_data.row_data(0) {
-                    let email = email.text;
-                    let pool = pool.clone();
-                    let weak_app = weak_app.clone();
-
-                    let _ = slint::spawn_local(async move {
-                        if let Ok(relative) = get_relative_data(&email, &pool).await {
-                            weak_app
-                                .unwrap()
-                                .global::<TableData>()
-                                .set_active_relative(relative);
-                        }
-
-                        if let Ok(rows) = sqlx::query(&sql::get_files_for_relative())
-                            .bind(&email.to_string())
-                            .fetch_all(&pool)
-                            .await
-                        {
-                            let items = Rc::new(VecModel::default());
-                            for row in rows {
-                                let name: String = row.get("filename");
-                                items.push(SharedString::from(name));
-                            }
-                            weak_app
-                                .unwrap()
-                                .global::<TableData>()
-                                .set_selected_relative_files(items.clone().into());
-                        }
-
-                        if let Ok(row) = sqlx::query(&sql::get_note_for_relative())
-                            .bind(&email.to_string())
-                            .fetch_one(&pool)
-                            .await
-                        {
-                            let note: String = row.get("text");
-                            weak_app
-                                .unwrap()
-                                .global::<TableData>()
-                                .set_selected_relative_note(SharedString::from(note));
-                        }
-                    })
-                    .unwrap();
-                }
-            }
+    app.global::<TableData>().on_show_update_window({
+        let update_window = update_window.as_weak();
+        move || {
+            update_window.unwrap().show().unwrap();
         }
     });
 
-    app.global::<TableData>().set_males(males.clone().into());
-    app.global::<TableData>()
-        .set_females2(females2.clone().into());
-
-    app.global::<TableData>().on_update_relative({
-        let weak_app = app.as_weak();
+    update_window.global::<TableData>().on_update_relative({
+        let weak_app = update_window.as_weak();
         let pool = pool.clone();
-
-        // the veriable 'email' is id.
-        move |email, relative| {
+        move |id, relative| {
             let pool = pool.clone();
             let weak_app = weak_app.clone();
             let mut mother_phone = String::new();
@@ -229,9 +178,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .bind(relative.pinned)
                             .bind(father_id_db)
                             .bind(mother_id_db)
-                            .bind(email.to_string())
+                            .bind(id.to_string())
                             .execute(&pool)
                             .await;
+
                         match res {
                             Ok(_) => {
                                 let females = get_female_relatives(&pool).await.unwrap();
@@ -284,7 +234,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .bind(relative.email.to_string())
                             .bind(relative.pinned)
                             .bind(mother_id_db)
-                            .bind(email.to_string())
+                            .bind(id.to_string())
                             .execute(&pool)
                             .await;
                         match res {
@@ -315,8 +265,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .unwrap()
                                     .global::<TableData>()
                                     .set_employees(employees.clone().into());
-
-                                println!("updated mother successfully");
                             }
                             Err(e) => {
                                 weak_app
@@ -339,7 +287,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .bind(relative.email.to_string())
                             .bind(relative.pinned)
                             .bind(father_id_db)
-                            .bind(email.to_string())
+                            .bind(id.to_string())
                             .execute(&pool)
                             .await;
                         match res {
@@ -383,194 +331,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             });
         }
     });
-
-    app.global::<TableData>().on_add_image_for_relative({
-        let weak_app = app.as_weak();
-        let pool = pool.clone();
-        move |id| {
-            let weak_app = weak_app.unwrap().as_weak();
-            if id == "" {
-                weak_app
-                    .unwrap()
-                    .global::<TableData>()
-                    .set_files_error(SharedString::from(
-                        "No selected relative, click on one row.",
-                    ));
-            } else {
-                if let Some(path) = FileDialog::new()
-                    .set_location("~/Desktop")
-                    .add_filter("Image", &["jpg", "jpeg", "png"])
-                    .show_open_single_file()
-                    .unwrap()
-                {
-                    let images_dir = images_dir.clone();
-                    let _ = slint::spawn_local({
-                        let weak_app = weak_app.unwrap().as_weak();
-                        let pool = pool.clone();
-                        if let Ok(_) = fs::copy(
-                            path.to_str().unwrap(),
-                            std::format!(
-                                "{images_dir}/{id}-{}",
-                                path.file_name().unwrap().to_str().unwrap().to_string()
-                            ),
-                        ) {
-                        } else {
-                            weak_app
-                                .unwrap()
-                                .global::<TableData>()
-                                .set_image_error(SharedString::from("Can't add image"));
-                            println!("error adding photo");
-                            return;
-                        };
-                        async move {
-                            match sqlx::query(&sql::add_image_for_relative())
-                                .bind(std::format!(
-                                    "{images_dir}/{id}-{}",
-                                    path.file_name().unwrap().to_str().unwrap().to_string()
-                                ))
-                                .bind(id.to_string())
-                                .execute(&pool)
-                                .await
-                            {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    println!("error: {}", e.to_string());
-                                    weak_app
-                                        .unwrap()
-                                        .global::<TableData>()
-                                        .set_image_error(SharedString::from("Can't add image"));
-                                }
-                            }
-                        }
-                    });
-                }
-            }
+    app.global::<TableData>().on_show_add_window({
+        let create_window = create_window.as_weak();
+        move || {
+            create_window.unwrap().show().unwrap();
         }
     });
 
-    app.global::<TableData>().on_add_files_for_relative({
-        let weak_app = app.as_weak();
-        let pool = pool.clone();
-        move |row, id| {
-            if id == "" {
-                weak_app
-                    .unwrap()
-                    .global::<TableData>()
-                    .set_files_error(SharedString::from(
-                        "No selected relative, click on one row.",
-                    ));
-            } else {
-                let active_tab = weak_app.unwrap().global::<TableData>().get_active_tab();
-                if active_tab == ActiveTab::Relative {
-                    let table_data = weak_app.unwrap().global::<TableData>().get_relative();
-                    if let Some(table_data) = table_data.row_data(row as usize) {
-                        if let Some(email) = table_data.row_data(0) {
-                            let email = email.text;
-                            println!("{email}");
-                            let path = FileDialog::new()
-                                .set_location("~/Desktop")
-                                .add_filter("Image", &["jpg", "jpeg", "png"])
-                                .add_filter("PDF File", &["pdf"])
-                                // microsoft word, microsoft excel,powerpoint, etc
-                                //.add_filter("Office File", &[""])
-                                .add_filter("Media File", &["mp4", "mp3", "mkv", "avi"])
-                                .show_open_single_file()
-                                .unwrap();
-
-                            if let Some(p) = path {
-                                let p = Rc::new(p);
-                                let mut size: u64 = 0;
-
-                                let files_dir = files_dir.clone();
-                                let _ = slint::spawn_local({
-                                    let pool = pool.clone();
-                                    let xx = Rc::clone(&p);
-                                    match fs::copy(
-                                        xx.to_str().unwrap(),
-                                        std::format!(
-                                            "{files_dir}/{email}-{}",
-                                            xx.file_name().unwrap().to_str().unwrap().to_string()
-                                        ),
-                                    ) {
-                                        Ok(n) => {
-                                            size += n;
-                                            //let meta = fs::metadata(std::format!(
-                                            //    "{work_dir}/{email}-{}",
-                                            //    xx.file_name()
-                                            //        .unwrap()
-                                            //        .to_str()
-                                            //        .unwrap()
-                                            //        .to_string()
-                                            //));
-                                            //match meta {
-                                            //    Ok(m) => {
-                                            //        println!("meta data: {}", m.len());
-                                            //    }
-                                            //    Err(e) => {
-                                            //        println!(" error getting file metadata {e}");
-                                            //    }
-                                            //}
-                                        }
-                                        Err(_) => {
-                                            weak_app
-                                                .unwrap()
-                                                .global::<TableData>()
-                                                .set_files_error(SharedString::from(
-                                                    "can't add file",
-                                                ));
-                                            return;
-                                        }
-                                    }
-
-                                    async move {
-                                        println!("size is {size}");
-                                        let res = sqlx::query(&sql::add_file())
-                                            .bind(xx.to_str().unwrap().to_string())
-                                            .bind(id.to_string())
-                                            .bind(
-                                                xx.extension()
-                                                    .unwrap()
-                                                    .to_str()
-                                                    .unwrap()
-                                                    .to_string(),
-                                            )
-                                            .bind(size as i32)
-                                            .bind(std::format!(
-                                                "{email}-{}",
-                                                xx.file_name()
-                                                    .unwrap()
-                                                    .to_str()
-                                                    .unwrap()
-                                                    .to_string()
-                                            ))
-                                            .execute(&pool)
-                                            .await;
-                                        match res {
-                                            Ok(_) => println!("created"),
-                                            Err(e) => println!("{e}"),
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                    } else {
-                        weak_app.unwrap().global::<TableData>().set_files_error(
-                            SharedString::from("Select a relative to add files for!"),
-                        );
-                    }
-                }
-            }
-        }
-    });
-
-    app.global::<TableData>().on_create_new_relative({
-        let weak_app = app.as_weak();
+    create_window.global::<TableData>().on_create_new_relative({
+        let weak_app = create_window.as_weak();
         let pool = pool.clone();
         move |relative| {
-            println!(
-                "{} {} {} {}",
-                relative.employable, relative.hotness, relative.swarthy, relative.crazy
-            );
             let pool = pool.clone();
             let weak_app = weak_app.clone();
             let mut mother_phone = String::new();
@@ -805,6 +576,309 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
+    app.global::<TableData>().on_current_row_changed({
+        let weak_app = app.as_weak();
+        let update_window = update_window.as_weak();
+        let pool = pool.clone();
+        move |row| {
+            let active_tab = weak_app.unwrap().global::<TableData>().get_active_tab();
+            if active_tab == ActiveTab::Relative {
+                let table_data = weak_app.unwrap().global::<TableData>().get_relative();
+                let table_data = table_data.row_data(row as usize).unwrap();
+                let update_window = update_window.clone();
+                if let Some(id) = table_data.row_data(0) {
+                    let id = id.text;
+                    let pool = pool.clone();
+                    let weak_app = weak_app.clone();
+                    let update_window = update_window.clone();
+
+                    let _ = slint::spawn_local(async move {
+                        if let Ok(relative) = get_relative_data(&id, &pool).await {
+                            println!("exctive: {}, {}", relative.id, relative.first_name);
+                            weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_active_relative(relative.clone());
+                            update_window
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_active_relative(relative.clone());
+                        }
+
+                        if let Ok(rows) = sqlx::query(&sql::get_files_for_relative())
+                            .bind(&id.to_string())
+                            .fetch_all(&pool)
+                            .await
+                        {
+                            let items = Rc::new(VecModel::default());
+                            for row in rows {
+                                let name: String =
+                                    row.try_get("filename").unwrap_or("".to_string());
+                                items.push(SharedString::from(name));
+                            }
+                            weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_selected_relative_files(items.clone().into());
+                            update_window
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_selected_relative_files(items.clone().into());
+                        }
+
+                        if let Ok(rows) = sqlx::query(&sql::get_notes_for_relative())
+                            .bind(&id.to_string())
+                            .fetch_all(&pool)
+                            .await
+                        {
+                            let items = Rc::new(VecModel::default());
+                            for row in rows {
+                                let name: String = row.try_get("text").unwrap_or("".to_string());
+                                items.push(SharedString::from(name));
+                            }
+                            weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_selected_relative_notes(items.clone().into());
+                            update_window
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_selected_relative_notes(items.clone().into());
+                        }
+                    })
+                    .unwrap();
+                }
+            }
+        }
+    });
+
+    app.global::<TableData>().set_males(males.clone().into());
+    app.global::<TableData>()
+        .set_females2(females2.clone().into());
+    update_window
+        .global::<TableData>()
+        .set_males(males.clone().into());
+    update_window
+        .global::<TableData>()
+        .set_females2(females2.clone().into());
+
+    app.global::<TableData>().on_add_image_for_relative({
+        let weak_app = app.as_weak();
+        let pool = pool.clone();
+        move |id| {
+            let weak_app = weak_app.unwrap().as_weak();
+            if id == "" {
+                weak_app
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_files_error(SharedString::from(
+                        "No selected relative, click on one row.",
+                    ));
+            } else {
+                if let Some(path) = FileDialog::new()
+                    .set_location("~/Desktop")
+                    .add_filter("Image", &["jpg", "jpeg", "png"])
+                    .show_open_single_file()
+                    .unwrap()
+                {
+                    let images_dir = images_dir.clone();
+                    let _ = slint::spawn_local({
+                        let weak_app = weak_app.unwrap().as_weak();
+                        let pool = pool.clone();
+                        if let Ok(_) = fs::copy(
+                            path.to_str().unwrap(),
+                            std::format!(
+                                "{images_dir}/{id}-{}",
+                                path.file_name().unwrap().to_str().unwrap().to_string()
+                            ),
+                        ) {
+                        } else {
+                            weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_image_error(SharedString::from("Can't add image"));
+                            println!("error adding photo");
+                            return;
+                        };
+                        async move {
+                            match sqlx::query(&sql::add_image_for_relative())
+                                .bind(std::format!(
+                                    "{images_dir}/{id}-{}",
+                                    path.file_name().unwrap().to_str().unwrap().to_string()
+                                ))
+                                .bind(id.to_string())
+                                .execute(&pool)
+                                .await
+                            {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    println!("error: {}", e.to_string());
+                                    weak_app
+                                        .unwrap()
+                                        .global::<TableData>()
+                                        .set_image_error(SharedString::from("Can't add image"));
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    });
+
+    app.global::<TableData>().on_add_files_for_relative({
+        let weak_app = app.as_weak();
+        let pool = pool.clone();
+        move |row, id| {
+            if id == "" {
+                weak_app
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_files_error(SharedString::from(
+                        "No selected relative, click on one row.",
+                    ));
+            } else {
+                let active_tab = weak_app.unwrap().global::<TableData>().get_active_tab();
+                if active_tab == ActiveTab::Relative {
+                    let table_data = weak_app.unwrap().global::<TableData>().get_relative();
+                    if let Some(table_data) = table_data.row_data(row as usize) {
+                        if let Some(id) = table_data.row_data(0) {
+                            let id = id.text;
+                            println!("{id}");
+                            let path = FileDialog::new()
+                                .set_location("~/Desktop")
+                                .add_filter("Image", &["jpg", "jpeg", "png"])
+                                .add_filter("PDF File", &["pdf"])
+                                // microsoft word, microsoft excel,powerpoint, etc
+                                //.add_filter("Office File", &[""])
+                                .add_filter("Media File", &["mp4", "mp3", "mkv", "avi"])
+                                .show_open_single_file()
+                                .unwrap();
+
+                            if let Some(p) = path {
+                                let p = Rc::new(p);
+                                let mut size: u64 = 0;
+
+                                let files_dir = files_dir.clone();
+                                let _ = slint::spawn_local({
+                                    let pool = pool.clone();
+                                    let xx = Rc::clone(&p);
+                                    match fs::copy(
+                                        xx.to_str().unwrap(),
+                                        std::format!(
+                                            "{files_dir}/{id}-{}",
+                                            xx.file_name().unwrap().to_str().unwrap().to_string()
+                                        ),
+                                    ) {
+                                        Ok(n) => {
+                                            size += n;
+                                            //let meta = fs::metadata(std::format!(
+                                            //    "{work_dir}/{id}-{}",
+                                            //    xx.file_name()
+                                            //        .unwrap()
+                                            //        .to_str()
+                                            //        .unwrap()
+                                            //        .to_string()
+                                            //));
+                                            //match meta {
+                                            //    Ok(m) => {
+                                            //        println!("meta data: {}", m.len());
+                                            //    }
+                                            //    Err(e) => {
+                                            //        println!(" error getting file metadata {e}");
+                                            //    }
+                                            //}
+                                        }
+                                        Err(_) => {
+                                            weak_app
+                                                .unwrap()
+                                                .global::<TableData>()
+                                                .set_files_error(SharedString::from(
+                                                    "can't add file",
+                                                ));
+                                            return;
+                                        }
+                                    }
+
+                                    async move {
+                                        println!("size is {size}");
+                                        let res = sqlx::query(&sql::add_file())
+                                            .bind(xx.to_str().unwrap().to_string())
+                                            .bind(id.to_string())
+                                            .bind(
+                                                xx.extension()
+                                                    .unwrap()
+                                                    .to_str()
+                                                    .unwrap()
+                                                    .to_string(),
+                                            )
+                                            .bind(size as i32)
+                                            .bind(std::format!(
+                                                "{id}-{}",
+                                                xx.file_name()
+                                                    .unwrap()
+                                                    .to_str()
+                                                    .unwrap()
+                                                    .to_string()
+                                            ))
+                                            .execute(&pool)
+                                            .await;
+                                        match res {
+                                            Ok(_) => println!("created"),
+                                            Err(e) => println!("{e}"),
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    } else {
+                        weak_app.unwrap().global::<TableData>().set_files_error(
+                            SharedString::from("Select a relative to add files for!"),
+                        );
+                    }
+                }
+            }
+        }
+    });
+
+    app.global::<TableData>().on_add_note_for_relative({
+        let weak_app = app.as_weak();
+        let pool = pool.clone();
+        move |id, note| {
+            println!("{id}{note}");
+            if id == "" {
+                weak_app
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_notes_error(SharedString::from("No id selected"));
+                return;
+            } else {
+                let _ = slint::spawn_local({
+                    let weak_app = weak_app.unwrap().as_weak();
+                    let pool = pool.clone();
+                    async move {
+                        let res = sqlx::query(&sql::add_note_for_relative())
+                            .bind(id.to_string())
+                            .bind(note.to_string())
+                            .execute(&pool)
+                            .await;
+                        match res {
+                            Ok(_) => {}
+                            Err(e) => {
+                                weak_app.unwrap().global::<TableData>().set_notes_error(
+                                    SharedString::from(slint::format!(
+                                        "Can't add note, {}",
+                                        e.to_string()
+                                    )),
+                                );
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    });
+
     app.global::<TableData>().on_delete_relative({
         let weak_app = app.as_weak();
         let pool = pool.clone();
@@ -855,10 +929,10 @@ async fn get_relative_data(
     let pinned: bool = row.get("pinned");
     let sameness: f32 = row.get("sameness");
     let sex: String = row.get("sex");
-    let hotness: i32 = row.get("hotness");
-    let crazy: i32 = row.get("crazy");
-    let swarthy: i32 = row.get("swarthy");
-    let employable: i32 = row.get("employable");
+    let hotness: f32 = row.get("hotness");
+    let crazy: f32 = row.get("crazy");
+    let swarthy: f32 = row.get("swarthy");
+    let employable: f32 = row.get("employable");
 
     let relative = Relative {
         id: slint::format!("{id}"),
@@ -873,10 +947,10 @@ async fn get_relative_data(
         sameness: slint::format!("{}", sameness),
         sex: sex.into(),
         note: "".into(),
-        hotness: slint::format!("{hotness}"),
-        crazy: slint::format!("{crazy}"),
-        swarthy: slint::format!("{swarthy}"),
-        employable: slint::format!("{employable}"),
+        hotness: hotness as f32,
+        crazy: crazy as f32,
+        swarthy: swarthy as f32,
+        employable: employable as f32,
     };
 
     Ok(relative)
@@ -904,6 +978,9 @@ async fn get_female_relatives(
         let pinned: bool = row.try_get("pinned").unwrap_or(false);
         let create_at: String = row.try_get("created_at").unwrap_or("null".into());
         let updated_at: String = row.try_get("updated_at").unwrap_or("null".into());
+        let swarthy: f32 = row.try_get("swarthy").unwrap_or(0.0);
+        let hotness: f32 = row.try_get("hotness").unwrap_or(0.0);
+        let crazy: f32 = row.try_get("crazy").unwrap_or(0.0);
 
         let mquery = "SELECT full_name FROM relative WHERE id=$1";
         let fquery = "SELECT full_name FROM relative WHERE id=$1";
@@ -929,6 +1006,9 @@ async fn get_female_relatives(
         items.push(slint::format!("{phone}").into());
         items.push(slint::format!("{email}").into());
         items.push(slint::format!("{pinned}").into());
+        items.push(slint::format!("{hotness}").into());
+        items.push(slint::format!("{swarthy}").into());
+        items.push(slint::format!("{crazy}").into());
         items.push(slint::format!("{lost_reason}").into());
         items.push(slint::format!("{create_at}").into());
         items.push(slint::format!("{updated_at}").into());
@@ -1051,6 +1131,7 @@ async fn get_all_employees(
         let pinned: bool = row.try_get("pinned").unwrap_or(false);
         let create_at: String = row.try_get("created_at").unwrap_or("null".into());
         let updated_at: String = row.try_get("updated_at").unwrap_or("null".into());
+        let employable: f32 = row.try_get("employable").unwrap_or(0.0);
 
         let mquery = "select full_name from relative where id=$1";
         let fquery = "select full_name from relative where id=$1";
@@ -1077,6 +1158,7 @@ async fn get_all_employees(
         items.push(slint::format!("{email}").into());
         items.push(slint::format!("{pinned}").into());
         items.push(slint::format!("{lost_reason}").into());
+        items.push(slint::format!("{employable}").into());
         items.push(slint::format!("{create_at}").into());
         items.push(slint::format!("{updated_at}").into());
         relatives.push(items.into());

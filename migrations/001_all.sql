@@ -3,7 +3,7 @@ CREATE TABLE relative (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
-    sameness        FLOAT,
+    sameness        FLOAT DEFAULT 0.0,
     lost_reason     TEXT,
     atnum           INTEGER,
     sex             TEXT NOT NULL,
@@ -19,10 +19,10 @@ CREATE TABLE relative (
     father_id       INTEGER,
     end_of_line     BOOLEAN DEFAULT 1,
     pinned          BOOLEAN DEFAULT 0,
-    hotness         INTEGER DEFAULT 0,
-    crazy           INTEGER DEFAULT 0,
-    swarthy         INTEGER DEFAULT 0,
-    employable      INTEGER DEFAULT 0,
+    hotness         FLOAT DEFAULT 0.0,
+    crazy           FLOAT DEFAULT 0.0,
+    swarthy         FLOAT DEFAULT 0.0,
+    employable      FLOAT DEFAULT 0.0,
     FOREIGN KEY (mother_id) REFERENCES relative(id),
     FOREIGN KEY (father_id) REFERENCES relative(id)
 );

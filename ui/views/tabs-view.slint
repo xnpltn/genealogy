@@ -8,6 +8,7 @@ export component TabsView inherits Rectangle {
     preferred-height: 100%;
     preferred-width: 100%;
     callback show_popup_window();
+    callback open_notes_popup();
 
     VerticalLayout {
         tabs := Rectangle {
@@ -20,7 +21,11 @@ export component TabsView inherits Rectangle {
 
         notes := Rectangle {
             max-height: 300px;
-            NotesSect { }
+            NotesSect {
+                open-note-popup => {
+                    open_notes_popup()
+                }
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 
 import { TabWidget, StandardTableView, GroupBox, VerticalBox } from "std-widgets.slint";
-import { Table } from "../components/table.slint";
+import { Table, FemalesTable, EmployeesTable } from "../components/table.slint";
 import { TableData , ActiveTab} from "../types.slint";
 export component Tabs inherits Rectangle {
 
@@ -23,7 +23,6 @@ export component Tabs inherits Rectangle {
                     Table {
                         show-popup-window => {
                             TableData.active-tab = ActiveTab.relative;
-                            show-popup-window()
                         }
                         data: TableData.relative;
                     }
@@ -44,13 +43,7 @@ export component Tabs inherits Rectangle {
                 alignment: stretch;
                 GroupBox {
                     vertical-stretch: 0;
-                    Table {
-            /*
-                        show_popup_window => {
-                            TableData.active-tab = ActiveTab.females;
-                            show_popup_window()
-                        }
-            */
+                    FemalesTable {
                         data: TableData.females;
                     }
                 }
@@ -70,13 +63,7 @@ export component Tabs inherits Rectangle {
                 alignment: stretch;
                 GroupBox {
                     vertical-stretch: 0;
-                    Table {
-            /*
-                        show_popup_window => {
-                            TableData.active-tab = ActiveTab.females;
-                            show_popup_window()
-                        }
-            */
+                    EmployeesTable {
                         data: TableData.employees;
                     }
                 }

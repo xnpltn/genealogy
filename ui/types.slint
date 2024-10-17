@@ -12,10 +12,28 @@ export struct Relative {
     lost-reason: string,
     sameness: string,
     note: string,
-    hotness: string,
-    swarthy: string,
-    crazy:string,
-    employable: string,
+    hotness: float,
+    swarthy: float,
+    crazy:float,
+    employable: float,
+}
+export struct Note {
+  id: string,
+  relative_id: string,
+  pinned: string,
+  text: string,
+}
+
+export struct File {
+  id: string,
+  imported_name: string,
+  imported_hash: string,
+  relative_id: string,
+  type: string,
+  size: string,
+  filename: string,
+  pinned: string,
+    
 }
 
 export enum ActiveTab{relative, employees, females}
@@ -43,11 +61,14 @@ export global TableData {
     in-out property <string> success-msg;
     in-out property <string> image-error;
     in-out property <string> files_error;
+    in-out property <string> notes-error;
     in-out property <string> mother-phone;
     in-out property <string> father-phone;
     callback add-files-for-relative(int, string);
     callback add-image-for-relative(string);
-    callback add-note-for-relative(int);
+    callback add-note-for-relative(string, string); // first parameter is id. second in the actual note text
     in-out property <[string]> selected-relative-files;
-    in-out property <string> selected-relative-note;
+    in-out property <[string]> selected-relative-notes;
+    callback show-update-window();
+    callback show-add-window();
 }

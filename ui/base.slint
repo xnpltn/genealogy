@@ -1,16 +1,17 @@
 import { CustomButton } from "components/button.slint";
-import { UpdateView, AddView} from "views/add-update-view.slint";
+import {  AddView } from "views/add-view.slint";
+import { UpdateView } from "views/update-view.slint";
 import { TabsView } from "views/tabs-view.slint";
 import { Palette, Button } from "std-widgets.slint";
-import { TableData } from "types.slint";
-import { Switch } from "std-widgets.slint";
+import { TableData} from "types.slint";
+import { Switch, TextEdit, HorizontalBox } from "std-widgets.slint";
 
 export { TableData }
 
- component Header inherits Rectangle {
+component Header inherits Rectangle {
     in-out property <bool> dark-mode;
     callback open-add-new();
-    y: 0px;
+    in-out property <string> title;
     height: 60px;
     background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #eceff4;
 
@@ -19,63 +20,14 @@ export { TableData }
         alignment: space-between;
         Rectangle {
             Text {
-                text: "Relatives";
+                text: @tr("{}", title);
                 font-size: 24px;
                 font-weight: 700;
                 color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
             }
         }
 
-        HorizontalLayout {
-            spacing: 10px;
-            alignment: end;
-            Button {
-                text: "New Relative";
-                height: 36px;
-                clicked => {
-                    open-add-new()
-                }
-            }
-
-            Button {
-                text: "About";
-                height: 36px;
-            }
-
-            Switch {
-                text: @tr("Dark Mode");
-                checked: Palette.color-scheme == ColorScheme.dark;
-                toggled => {
-                    Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
-                }
-            }
-        }
-    }
-}
-
-component TaskBar inherits Rectangle {
-    callback close-popup();
-    height: 40px;
-    background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
-    HorizontalLayout {
-        alignment: space-between;
-        Button {
-            text: "Close";
-            height: parent.height - 10px;
-            clicked => {
-                // reset
-                TableData.error = "";
-                TableData.selected-father-id = -1;
-                TableData.selected-mother-id = -1;
-                TableData.selected-relative-note = "";
-                close-popup()
-            }
-        }
-
-        Text {
-            text: TableData.error;
-            color: Colors.red;
-        }
+        @children
     }
 }
 
@@ -84,64 +36,84 @@ export component Main inherits Window {
     min-height: 480px;
     title: "Genealogy App";
     HorizontalLayout {
-        add-update-pop := PopupWindow {
-            width: root.width * 80%;
-            height: root.height * 80%;
-            x: (root.width - self.width) / 2;
-            y: (root.height - self.height) / 2;
-            close-on-click: false;
-
-            VerticalLayout {
-                TaskBar {
-                    close-popup => {
-                        add-update-pop.close()
+        VerticalLayout {
+            Header {
+                title: "GenApp";
+                HorizontalLayout {
+                    spacing: 10px;
+                    alignment: end;
+                    Button {
+                        text: "Add New";
+                        height: 36px;
+                        clicked => {
+                            TableData.show-add-window()
+                        }
                     }
-                }
 
-                Rectangle {
-                    background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #e5e9f0;
-                    UpdateView {
-                        title: "Update Relative";
+                    Button {
+                        text: "About";
+                        height: 36px;
                     }
-                }
-            }
-        }
 
-        new-popup := PopupWindow {
-            width: root.width * 80%;
-            height: root.height * 80%;
-            x: (root.width - self.width) / 2;
-            y: (root.height - self.height) / 2;
-            close-on-click: false;
-
-            VerticalLayout {
-                TaskBar {
-                    close-popup => {
-                        new-popup.close()
-                    }
-                }
-
-                Rectangle {
-                    background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #e5e9f0;
-                    AddView {
-                        name: "New Relative";
+                    Switch {
+                        text: @tr("Dark Mode");
+                        checked: Palette.color-scheme == ColorScheme.dark;
+                        toggled => {
+                            Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
+                        }
                     }
                 }
             }
+
+            TabsView { }
         }
+    }
+}
+
+export component UpdateWindow inherits Window {
+    min-width: 720px;
+    min-height: 480px;
+    HorizontalLayout {
 
         VerticalLayout {
             Header {
-                open-add-new => {
-                    new-popup.show()
+                title: @tr("Update {}", TableData.active-relative.first-name);
+                HorizontalLayout {
+                    Switch {
+                        text: @tr("Dark Mode");
+                        checked: Palette.color-scheme == ColorScheme.dark;
+                        toggled => {
+                            Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
+                        }
+                    }
                 }
             }
 
-            TabsView {
-                show_popup_window => {
-                    add-update-pop.show();
+            UpdateView { }
+        }
+    }
+}
+
+export component CreateWindow inherits Window {
+    min-width: 650px;
+    min-height: 430px;
+    HorizontalLayout {
+
+        VerticalLayout {
+            Header {
+                title: "Add New Relative";
+                HorizontalLayout {
+                    Switch {
+                        text: @tr("Dark Mode");
+                        checked: Palette.color-scheme == ColorScheme.dark;
+                        toggled => {
+                            Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
+                        }
+                    }
                 }
             }
+
+            AddView { }
         }
     }
 }
