@@ -16,6 +16,8 @@ export struct Relative {
     swarthy: float,
     crazy:float,
     employable: float,
+    mother_id: int,
+    father_id: int,
 }
 export struct Note {
   id: string,
@@ -71,4 +73,8 @@ export global TableData {
     in-out property <[string]> selected-relative-notes;
     callback show-update-window();
     callback show-add-window();
+    in-out property <string> create-success;
+    in-out property <string> create-error;
+    in-out property <string> update-success;
+    in-out property <string> update-eror;
 }

@@ -6,12 +6,48 @@ import { TableData , Relative} from "../types.slint";
 export component UpdateView inherits Rectangle {
     in-out property <Relative> relative;
     in-out property <Relative> og;
-
     in-out property <string> title;
     border-radius: 10px;
+
     VerticalLayout {
         spacing: 10px;
         padding: 10px;
+        message := PopupWindow {
+            height: 300px;
+            width: 300px;
+            close-on-click: false;
+            x: (root.width - self.width) / 2;
+            y: (root.height - self.height) / 2;
+            Rectangle {
+                height: 300px;
+                width: 300px;
+                border-radius: 20px;
+                background: TableData.update-success != "" ? green : red;
+                VerticalLayout {
+                    VerticalLayout {
+                        alignment: center;
+                        height: parent.height * 80%;
+                        Text {
+                            font-size: 20px;
+                            font-weight: 400;
+                            text: TableData.update-success != "" ? TableData.update-success : TableData.update-eror;
+                            color: white;
+                        }
+                    }
+
+                    HorizontalBox {
+                        alignment: center;
+                        CustomButton {
+                            title: "OK";
+                            background-color: blue;
+                            clicked => {
+                                message.close()
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         ScrollView {
             VerticalLayout {
@@ -225,6 +261,7 @@ export component UpdateView inherits Rectangle {
                                     width: 300px;
                                     height: 150px;
                                     columns: [
+                                        { title: "id" },
                                         { title: "Name" },
                                         { title: "age" },
                                         { title: "phone" },
@@ -245,6 +282,7 @@ export component UpdateView inherits Rectangle {
                                     width: 300px;
                                     height: 150px;
                                     columns: [
+                                        { title: "id" },
                                         { title: "Name" },
                                         { title: "age" },
                                         { title: "phone" },
@@ -277,7 +315,8 @@ export component UpdateView inherits Rectangle {
                                         crazy: crazy.value,
                                         swarthy: swarthy.value,
                                     };
-                                    TableData.update-relative(TableData.active-relative.id,relative)
+                                    TableData.update-relative(TableData.active-relative.id,relative);
+                                    message.show()
                                 }
                             }
                         }
