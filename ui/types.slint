@@ -44,11 +44,11 @@ export enum ActiveTab{relative, employees, females}
 export global TableData {
     in property <[[StandardListViewItem]]> relative;
     in property <[[StandardListViewItem]]> females;
-    in property <[[StandardListViewItem]]> males;
-    in property <[[StandardListViewItem]]> females2;
     in property <[[StandardListViewItem]]> employees;
-    in-out property <int> selected-mother-id: -1;
-    in-out property <int> selected-father-id: -1;
+    in property <[string]> males;
+    in property <[string]> females2;
+    in-out property <string> selected-mother-name;
+    in-out property <string> selected-father-name;
     in-out property <int> current_row;
     in-out property <bool> has_selected_row;
     in-out property <ActiveTab> active-tab;
@@ -64,8 +64,6 @@ export global TableData {
     in-out property <string> image-error;
     in-out property <string> files_error;
     in-out property <string> notes-error;
-    in-out property <string> mother-phone;
-    in-out property <string> father-phone;
     callback add-files-for-relative(int, string);
     callback add-image-for-relative(string);
     callback add-note-for-relative(string, string); // first parameter is id. second in the actual note text

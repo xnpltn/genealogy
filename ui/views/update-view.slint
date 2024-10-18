@@ -13,34 +13,40 @@ export component UpdateView inherits Rectangle {
         spacing: 10px;
         padding: 10px;
         message := PopupWindow {
-            height: 300px;
-            width: 300px;
+            height: 100px;
+            width: 100px;
             close-on-click: false;
             x: (root.width - self.width) / 2;
             y: (root.height - self.height) / 2;
             Rectangle {
-                height: 300px;
-                width: 300px;
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+                height: 200px;
+                width: 200px;
                 border-radius: 20px;
                 background: TableData.update-success != "" ? green : red;
                 VerticalLayout {
                     VerticalLayout {
                         alignment: center;
-                        height: parent.height * 80%;
-                        Text {
-                            font-size: 20px;
-                            font-weight: 400;
-                            text: TableData.update-success != "" ? TableData.update-success : TableData.update-eror;
-                            color: white;
+                        VerticalLayout {
+                            alignment: center;
+                            Text {
+                                horizontal-alignment: center;
+                                font-size: 20px;
+                                font-weight: 400;
+                                text: TableData.update-success != "" ? TableData.update-success : TableData.update-eror;
+                                color: white;
+                            }
                         }
                     }
 
                     HorizontalBox {
                         alignment: center;
-                        CustomButton {
-                            title: "OK";
-                            background-color: blue;
+                        Button {
+                            text: "OK";
                             clicked => {
+                                TableData.selected-mother-name = "";
+                                TableData.selected-father-name = "";
                                 message.close()
                             }
                         }
@@ -254,43 +260,22 @@ export component UpdateView inherits Rectangle {
                             alignment: space-around;
                             VerticalLayout {
                                 Text {
-                                    text: "Choose Mother";
+                                    text: TableData.selected-mother-name != "" ? @tr("Update Mother | current {}", TableData.selected-mother-name) : "Choose Mother";
                                 }
 
-                                mother-table := StandardTableView {
-                                    width: 300px;
-                                    height: 150px;
-                                    columns: [
-                                        { title: "id" },
-                                        { title: "Name" },
-                                        { title: "age" },
-                                        { title: "phone" },
-                                    ];
-                                    rows: TableData.females2;
-                                    current-row-changed(i) => {
-                                        TableData.selected-mother-id = i;
-                                    }
+                                mother := ComboBox {
+                                    model: TableData.females2;
+                                    current-value: TableData.selected-mother-name;
                                 }
                             }
 
                             VerticalLayout {
                                 Text {
-                                    text: "Choose Father";
+                                    text: TableData.selected-father-name != "" ? @tr("Update Father | current {}", TableData.selected-father-name) : "Choose Father";
                                 }
 
-                                father-table := StandardTableView {
-                                    width: 300px;
-                                    height: 150px;
-                                    columns: [
-                                        { title: "id" },
-                                        { title: "Name" },
-                                        { title: "age" },
-                                        { title: "phone" },
-                                    ];
-                                    rows: TableData.males;
-                                    current-row-changed(i) => {
-                                        TableData.selected-father-id = i;
-                                    }
+                                father := ComboBox {
+                                    model: TableData.males;
                                 }
                             }
                         }
@@ -314,81 +299,24 @@ export component UpdateView inherits Rectangle {
                                         employable: employable.value,
                                         crazy: crazy.value,
                                         swarthy: swarthy.value,
+                                        mother-id: TableData.active-relative.mother-id,
+                                        father-id: TableData.active-relative.father-id,
                                     };
+                                    TableData.selected-mother-name = mother.current-value;
+                                    TableData.selected-father-name = father.current-value;
                                     TableData.update-relative(TableData.active-relative.id,relative);
-                                    message.show()
+                                    message.show();
                                 }
                             }
                         }
-
-                        /*
-                        HorizontalBox {
-                            width: 100%;
-                            VerticalLayout {
-                                alignment: center;
-                                Rectangle {
-                                    height: 100px;
-                                    width: 100px;
-                                    border-radius: 5px;
-                                    background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
-                                    if TableData.active-relative-image == "":Text {
-                                        text: "Image";
-                                        color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
-                                    }
-                                    if TableData.active-relative-image != "": Image { }
-                                }
-                            }
-
-                            VerticalLayout {
-                                alignment: center;
-                                CustomButton {
-                                    title: "Upload Photo";
-                                    height: 40px;
-                                    width: 120px;
-                                    background: Palette.color-scheme == ColorScheme.dark ? #5e81ac : #81a1c1;
-                                    clicked => {
-                                        TableData.add-image-for-relative(TableData.active-relative.id);
-                                    }
-                                }
-                            }
-                        }
-                        */
                     }
                 }
 
                 GroupBox {
                     VerticalLayout {
                         spacing: 10px;
-                        /*
-                        HorizontalLayout {
-                            spacing: 10px;
-                            StandardTableView {
-                                columns: [{ title: "Name" }, { title: "Born" }];
-                                rows: [
-                                    [{ text:"Sister Hotty" }, { text: "4-5-2023" }],
-                                    [{ text: "Brother Bob Thorton" }, { text: "6-3-2024" }],
-                                ];
-                            }
-
-                            StandardTableView {
-                                columns: [{ title: "Name" }, { title: "Born" }];
-                                rows: [
-                                    [{ text:"Henrietta Hotty" }, { text: "4-5-2023" }],
-                                    [{ text: "Billy Bob Thorton" }, { text: "6-3-2024" }],
-                                ];
-                            }
-                        }
-                        */
-
                         HorizontalLayout {
                             alignment: space-around;
-                            /*CustomButton {
-                                height: 40px;
-                                width: 120px;
-                                title: @tr("Pin/Unpin record");
-                                background: #16a;
-                            }*/
-
                             CustomButton {
                                 height: 40px;
                                 width: 120px;

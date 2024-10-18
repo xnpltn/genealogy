@@ -188,17 +188,10 @@ export component AddView inherits Rectangle {
                                     text: "Choose Mother";
                                 }
 
-                                mother-table := StandardTableView {
-                                    width: 300px;
-                                    height: 150px;
-                                    columns: [
-                                        { title: "Name" },
-                                        { title: "age" },
-                                        { title: "phone" },
-                                    ];
-                                    rows: TableData.females2;
-                                    current-row-changed(i) => {
-                                        TableData.selected-mother-id = i;
+                                mother := ComboBox {
+                                    model: TableData.females2;
+                                    selected(value) => {
+                                        TableData.selected-mother-name = value;
                                     }
                                 }
                             }
@@ -208,17 +201,10 @@ export component AddView inherits Rectangle {
                                     text: "Choose Father";
                                 }
 
-                                father-table := StandardTableView {
-                                    width: 300px;
-                                    height: 150px;
-                                    columns: [
-                                        { title: "Name" },
-                                        { title: "age" },
-                                        { title: "phone" },
-                                    ];
-                                    rows: TableData.males;
-                                    current-row-changed(i) => {
-                                        TableData.selected-father-id = i;
+                                father := ComboBox {
+                                    model: TableData.males;
+                                    selected(value) => {
+                                        TableData.selected-father-name = value;
                                     }
                                 }
                             }
@@ -244,7 +230,7 @@ export component AddView inherits Rectangle {
                                         crazy: crazy.value,
                                         swarthy: swarthy.value,
                                     };
-                                    TableData.create-new-relative(relative)
+                                    TableData.create-new-relative(relative);
                                 }
                             }
                         }

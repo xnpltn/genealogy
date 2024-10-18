@@ -1,7 +1,7 @@
 #![allow(deprecated)]
+#![allow(unreachable_code)]
 use native_dialog::FileDialog;
 use slint::*;
-use slint::{StandardListViewItem, VecModel};
 use sqlx::{migrate, Row};
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
 use std::fs;
@@ -9,6 +9,7 @@ use std::io;
 use std::rc::Rc;
 use std::{env, u64};
 
+mod repo;
 mod sql;
 
 slint::include_modules!();
@@ -79,11 +80,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let update_window = UpdateWindow::new()?;
     let create_window = CreateWindow::new()?;
 
-    let females = get_female_relatives(&pool).await?;
-    let relatives = get_all_relative(&pool).await?;
-    let employees = get_all_employees(&pool).await?;
-    let males = get_male_relatives(&pool).await?;
-    let females2 = get_mothers(&pool).await?;
+    let females = repo::get_female_relatives(&pool).await?;
+    let relatives = repo::get_all_relative(&pool).await?;
+    let employees = repo::get_all_employees(&pool).await?;
+    let males = repo::get_male_relatives(&pool).await?;
+    let females2 = repo::get_mothers(&pool).await?;
 
     app.global::<TableData>()
         .set_females(females.clone().into());
@@ -99,309 +100,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    update_window.global::<TableData>().on_update_relative({
-        let weak_app = update_window.as_weak();
-        let pool = pool.clone();
-        let app = app.as_weak();
-        move |id, relative| {
-            let pool = pool.clone();
-            let weak_app = weak_app.clone();
-            let mut mother_phone = String::new();
-            let mut father_phone = String::new();
-            let m_id = weak_app
-                .unwrap()
-                .global::<TableData>()
-                .get_selected_mother_id();
-            let f_id = weak_app
-                .unwrap()
-                .global::<TableData>()
-                .get_selected_father_id();
-            if m_id > -1 {
-                mother_phone = weak_app
-                    .unwrap()
-                    .global::<TableData>()
-                    .get_females2()
-                    .row_data(m_id as usize)
-                    .unwrap()
-                    .row_data(2)
-                    .unwrap()
-                    .text
-                    .to_string();
-            }
-            if f_id > -1 {
-                father_phone = weak_app
-                    .unwrap()
-                    .global::<TableData>()
-                    .get_males()
-                    .row_data(f_id as usize)
-                    .unwrap()
-                    .row_data(2)
-                    .unwrap()
-                    .text
-                    .to_string();
-            }
-
-            let _ = slint::spawn_local({
-                let pool = pool.clone();
-                let app = app.clone();
-                println!("updating....");
-                async move {
-                    let pool = pool.clone();
-                    let mut mother_id_db = 0;
-                    let mut father_id_db = 0;
-                    if mother_phone != "" {
-                        mother_id_db = sqlx::query("SELECT id FROM relative WHERE phone = $1")
-                            .bind(mother_phone)
-                            .fetch_one(&pool)
-                            .await
-                            .unwrap()
-                            .get("id");
-                    }
-
-                    if father_phone != "" {
-                        father_id_db = sqlx::query("SELECT id FROM relative WHERE phone = $1")
-                            .bind(father_phone)
-                            .fetch_one(&pool)
-                            .await
-                            .unwrap()
-                            .get("id");
-                    }
-
-                    if mother_id_db > 0 && father_id_db > 0 {
-                        let res = sqlx::query(&sql::update_both_parents())
-                            .bind(relative.sameness.to_string())
-                            .bind(relative.lost_reason.to_string())
-                            .bind(relative.sex.to_string())
-                            .bind(relative.birthday.to_string())
-                            .bind(relative.first_name.to_string())
-                            .bind(relative.middle_name.to_string())
-                            .bind(relative.last_name.to_string())
-                            .bind(relative.phone.to_string())
-                            .bind(relative.email.to_string())
-                            .bind(relative.pinned)
-                            .bind(father_id_db)
-                            .bind(mother_id_db)
-                            .bind(id.to_string())
-                            .execute(&pool)
-                            .await;
-
-                        match res {
-                            Ok(_) => {
-                                let females = get_female_relatives(&pool).await.unwrap();
-                                let relatives = get_all_relative(&pool).await.unwrap();
-                                let employees = get_all_employees(&pool).await.unwrap();
-                                let males = get_male_relatives(&pool).await.unwrap();
-                                let females2 = get_mothers(&pool).await.unwrap();
-
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_males(males.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_females2(females2.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_employees(employees.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_update_success(SharedString::from("Relative Update"));
-
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_males(males.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females2(females2.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_employees(employees.clone().into());
-                            }
-                            Err(e) => {
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_error(e.to_string().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_update_eror(e.to_string().into());
-                            }
-                        }
-                    } else if mother_id_db > 0 && father_id_db <= 0 {
-                        // add mother only
-                        let res = sqlx::query(&sql::update_mother_only())
-                            .bind(relative.sameness.to_string())
-                            .bind(relative.lost_reason.to_string())
-                            .bind(relative.sex.to_string())
-                            .bind(relative.birthday.to_string())
-                            .bind(relative.first_name.to_string())
-                            .bind(relative.middle_name.to_string())
-                            .bind(relative.last_name.to_string())
-                            .bind(relative.phone.to_string())
-                            .bind(relative.email.to_string())
-                            .bind(relative.pinned)
-                            .bind(mother_id_db)
-                            .bind(id.to_string())
-                            .execute(&pool)
-                            .await;
-                        match res {
-                            Ok(_) => {
-                                let females = get_female_relatives(&pool).await.unwrap();
-                                let relatives = get_all_relative(&pool).await.unwrap();
-                                let employees = get_all_employees(&pool).await.unwrap();
-                                let males = get_male_relatives(&pool).await.unwrap();
-                                let females2 = get_mothers(&pool).await.unwrap();
-
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_update_success(SharedString::from("Updated"));
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_males(males.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_females2(females2.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_employees(employees.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_males(males.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females2(females2.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_employees(employees.clone().into());
-                            }
-                            Err(e) => {
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_error(e.to_string().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_update_eror(e.to_string().into());
-                            }
-                        }
-                    } else if father_id_db > 0 && mother_id_db <= 0 {
-                        // update father only
-                        let res = sqlx::query(&sql::update_father_only())
-                            .bind(relative.sameness.to_string())
-                            .bind(relative.lost_reason.to_string())
-                            .bind(relative.sex.to_string())
-                            .bind(relative.birthday.to_string())
-                            .bind(relative.first_name.to_string())
-                            .bind(relative.middle_name.to_string())
-                            .bind(relative.last_name.to_string())
-                            .bind(relative.phone.to_string())
-                            .bind(relative.email.to_string())
-                            .bind(relative.pinned)
-                            .bind(father_id_db)
-                            .bind(id.to_string())
-                            .execute(&pool)
-                            .await;
-                        match res {
-                            Ok(_) => {
-                                let females = get_female_relatives(&pool).await.unwrap();
-                                let relatives = get_all_relative(&pool).await.unwrap();
-                                let employees = get_all_employees(&pool).await.unwrap();
-                                let males = get_male_relatives(&pool).await.unwrap();
-                                let females2 = get_mothers(&pool).await.unwrap();
-
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_update_success(SharedString::from("Updated"));
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_males(males.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_females2(females2.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_employees(employees.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_males(males.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females2(females2.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_employees(employees.clone().into());
-                            }
-                            Err(e) => {
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_error(e.to_string().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_update_eror(e.to_string().into());
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    });
     app.global::<TableData>().on_show_add_window({
         let create_window = create_window.as_weak();
         move || {
@@ -409,314 +107,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
+    update_window.global::<TableData>().on_update_relative({
+        let update_weak_window = update_window.as_weak();
+        let pool = pool.clone();
+        let app = app.as_weak();
+        let create_weak_window = create_window.as_weak();
+        move |id, relative| {
+            update_relative(
+                id.to_string(),
+                pool.clone(),
+                relative,
+                app.clone(),
+                update_weak_window.clone(),
+                create_weak_window.clone(),
+            );
+        }
+    });
     create_window.global::<TableData>().on_create_new_relative({
         let weak_app = create_window.as_weak();
         let pool = pool.clone();
         let app = app.as_weak();
+        let update_weak_window = update_window.as_weak();
         move |relative| {
-            let pool = pool.clone();
-            let weak_app = weak_app.clone();
-            let mut mother_phone = String::new();
-            let mut father_phone = String::new();
-            let m_id = weak_app
-                .unwrap()
-                .global::<TableData>()
-                .get_selected_mother_id();
-            let f_id = weak_app
-                .unwrap()
-                .global::<TableData>()
-                .get_selected_father_id();
-            if m_id > -1 {
-                mother_phone = weak_app
-                    .unwrap()
-                    .global::<TableData>()
-                    .get_females2()
-                    .row_data(m_id as usize)
-                    .unwrap()
-                    .row_data(2)
-                    .unwrap()
-                    .text
-                    .to_string();
-            }
-            if f_id > -1 {
-                father_phone = weak_app
-                    .unwrap()
-                    .global::<TableData>()
-                    .get_males()
-                    .row_data(f_id as usize)
-                    .unwrap()
-                    .row_data(2)
-                    .unwrap()
-                    .text
-                    .to_string();
-            }
-
-            let _ = slint::spawn_local({
-                let pool = pool.clone();
-                let app = app.clone();
-                async move {
-                    let pool = pool.clone();
-                    let mut mother_id_db = 0;
-                    let mut father_id_db = 0;
-                    if mother_phone != "" {
-                        mother_id_db = sqlx::query("SELECT id FROM relative WHERE phone = $1")
-                            .bind(mother_phone)
-                            .fetch_one(&pool)
-                            .await
-                            .unwrap()
-                            .get("id");
-                    }
-
-                    if father_phone != "" {
-                        father_id_db = sqlx::query("SELECT id FROM relative WHERE phone = $1")
-                            .bind(father_phone)
-                            .fetch_one(&pool)
-                            .await
-                            .unwrap()
-                            .get("id");
-                    }
-
-                    if mother_id_db > 0 && father_id_db > 0 {
-                        // add new with both parents
-                        let res = sqlx::query(&sql::create_new_relative_with_both_parents())
-                            .bind(relative.sameness.to_string())
-                            .bind(relative.lost_reason.to_string())
-                            .bind(relative.sex.to_string())
-                            .bind(relative.birthday.to_string())
-                            .bind(relative.first_name.to_string())
-                            .bind(relative.middle_name.to_string())
-                            .bind(relative.last_name.to_string())
-                            .bind(relative.phone.to_string())
-                            .bind(relative.email.to_string())
-                            .bind(relative.pinned)
-                            .bind(mother_id_db)
-                            .bind(father_id_db)
-                            .bind(relative.employable.to_string())
-                            .bind(relative.swarthy.to_string())
-                            .bind(relative.hotness.to_string())
-                            .bind(relative.crazy.to_string())
-                            .execute(&pool)
-                            .await;
-                        match res {
-                            Ok(_) => {
-                                let females = get_female_relatives(&pool).await.unwrap();
-                                let relatives = get_all_relative(&pool).await.unwrap();
-                                let employees = get_all_employees(&pool).await.unwrap();
-                                let males = get_male_relatives(&pool).await.unwrap();
-                                let females2 = get_mothers(&pool).await.unwrap();
-
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_employees(employees.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females2(females2.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_males(males.clone().into());
-                                println!("added successfully");
-                            }
-                            Err(e) => {
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_error(e.to_string().into());
-                            }
-                        }
-                    } else if mother_id_db > 0 && father_id_db <= 0 {
-                        // add new with mother only
-                        let res = sqlx::query(&sql::create_new_relative_with_mother_only())
-                            .bind(relative.sameness.to_string())
-                            .bind(relative.lost_reason.to_string())
-                            .bind(relative.sex.to_string())
-                            .bind(relative.birthday.to_string())
-                            .bind(relative.first_name.to_string())
-                            .bind(relative.middle_name.to_string())
-                            .bind(relative.last_name.to_string())
-                            .bind(relative.phone.to_string())
-                            .bind(relative.email.to_string())
-                            .bind(relative.pinned)
-                            .bind(mother_id_db)
-                            .bind(relative.employable.to_string())
-                            .bind(relative.swarthy.to_string())
-                            .bind(relative.hotness.to_string())
-                            .bind(relative.crazy.to_string())
-                            .execute(&pool)
-                            .await;
-                        match res {
-                            Ok(_) => {
-                                let females = get_female_relatives(&pool).await.unwrap();
-                                let relatives = get_all_relative(&pool).await.unwrap();
-                                let employees = get_all_employees(&pool).await.unwrap();
-                                let males = get_male_relatives(&pool).await.unwrap();
-                                let females2 = get_mothers(&pool).await.unwrap();
-
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_employees(employees.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females2(females2.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_males(males.clone().into());
-                            }
-                            Err(e) => {
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_error(e.to_string().into());
-                            }
-                        }
-                    } else if father_id_db > 0 && mother_id_db <= 0 {
-                        // update father only
-                        let res = sqlx::query(&sql::create_new_relative_with_father_only())
-                            .bind(relative.sameness.to_string())
-                            .bind(relative.lost_reason.to_string())
-                            .bind(relative.sex.to_string())
-                            .bind(relative.birthday.to_string())
-                            .bind(relative.first_name.to_string())
-                            .bind(relative.middle_name.to_string())
-                            .bind(relative.last_name.to_string())
-                            .bind(relative.phone.to_string())
-                            .bind(relative.email.to_string())
-                            .bind(relative.pinned)
-                            .bind(father_id_db)
-                            .bind(relative.employable.to_string())
-                            .bind(relative.swarthy.to_string())
-                            .bind(relative.hotness.to_string())
-                            .bind(relative.crazy.to_string())
-                            .execute(&pool)
-                            .await;
-                        match res {
-                            Ok(_) => {
-                                let females = get_female_relatives(&pool).await.unwrap();
-                                let relatives = get_all_relative(&pool).await.unwrap();
-                                let employees = get_all_employees(&pool).await.unwrap();
-                                let males = get_male_relatives(&pool).await.unwrap();
-                                let females2 = get_mothers(&pool).await.unwrap();
-
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_employees(employees.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females2(females2.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_males(males.clone().into());
-                                println!("added father successfully");
-                            }
-                            Err(e) => {
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_error(e.to_string().into());
-                            }
-                        }
-                    } else if mother_id_db <= 0 && father_id_db <= 0 {
-                        // create relative with no parents
-                        let res = sqlx::query(&sql::create_new_relative_no_parents())
-                            .bind(relative.sameness.to_string())
-                            .bind(relative.lost_reason.to_string())
-                            .bind(relative.sex.to_string())
-                            .bind(relative.birthday.to_string())
-                            .bind(relative.first_name.to_string())
-                            .bind(relative.middle_name.to_string())
-                            .bind(relative.last_name.to_string())
-                            .bind(relative.phone.to_string())
-                            .bind(relative.email.to_string())
-                            .bind(relative.pinned)
-                            .bind(relative.employable.to_string())
-                            .bind(relative.swarthy.to_string())
-                            .bind(relative.hotness.to_string())
-                            .bind(relative.crazy.to_string())
-                            .execute(&pool)
-                            .await;
-                        match res {
-                            Ok(_) => {
-                                let females = get_female_relatives(&pool).await.unwrap();
-                                let relatives = get_all_relative(&pool).await.unwrap();
-                                let employees = get_all_employees(&pool).await.unwrap();
-                                let males = get_male_relatives(&pool).await.unwrap();
-                                let females2 = get_mothers(&pool).await.unwrap();
-
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females(females.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_relative(relatives.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_employees(employees.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_females2(females2.clone().into());
-                                app.unwrap()
-                                    .global::<TableData>()
-                                    .set_males(males.clone().into());
-                            }
-                            Err(e) => {
-                                weak_app
-                                    .unwrap()
-                                    .global::<TableData>()
-                                    .set_error(e.to_string().into());
-                            }
-                        }
-                    }
-                }
-            });
+            create_relative(
+                relative,
+                pool.clone(),
+                weak_app.clone(),
+                update_weak_window.clone(),
+                app.clone(),
+            );
         }
     });
 
@@ -738,10 +157,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                     let _ = slint::spawn_local(async move {
                         if let Ok(relative) = get_relative_data(&id, &pool).await {
-                            println!(
-                                "exctive parent: {}, {}",
-                                relative.father_id, relative.mother_id
-                            );
+                            let mut selected_mother_name = String::new();
+                            let mut selected_father_name = String::new();
+                            if let Ok(m_row) =
+                                sqlx::query("SELECT full_name FROM relative WHERE id = $1")
+                                    .bind(relative.mother_id)
+                                    .fetch_one(&pool)
+                                    .await
+                            {
+                                selected_mother_name = m_row.get("full_name");
+                            }
+                            if let Ok(f_row) =
+                                sqlx::query("SELECT full_name FROM relative WHERE id = $1")
+                                    .bind(relative.father_id)
+                                    .fetch_one(&pool)
+                                    .await
+                            {
+                                selected_father_name = f_row.get("full_name");
+                            }
                             weak_app
                                 .unwrap()
                                 .global::<TableData>()
@@ -750,6 +183,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .unwrap()
                                 .global::<TableData>()
                                 .set_active_relative(relative.clone());
+                            println!("{selected_father_name} and {selected_mother_name}");
+                            weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_selected_father_name(SharedString::from(
+                                    selected_father_name.clone(),
+                                ));
+                            weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_selected_mother_name(SharedString::from(
+                                    selected_mother_name.clone(),
+                                ));
+                            update_window
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_selected_father_name(SharedString::from(
+                                    selected_father_name.clone(),
+                                ));
+                            update_window
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_selected_mother_name(SharedString::from(
+                                    selected_mother_name.clone(),
+                                ));
                         }
 
                         if let Ok(rows) = sqlx::query(&sql::get_files_for_relative())
@@ -1107,216 +565,596 @@ async fn get_relative_data(
     Ok(relative)
 }
 
-async fn get_female_relatives(
-    pool: &SqlitePool,
-) -> Result<Rc<VecModel<ModelRc<StandardListViewItem>>>, Box<dyn std::error::Error>> {
-    let females: Rc<VecModel<slint::ModelRc<StandardListViewItem>>> = Rc::new(VecModel::default());
-    let rows = sqlx::query(&sql::get_female_relatives())
-        .fetch_all(pool)
-        .await?;
+// function to be called on update relative callback
+fn update_relative(
+    id: String,
+    pool: SqlitePool,
+    relative: Relative,
+    app: slint::Weak<Main>,
+    update_weak_window: slint::Weak<UpdateWindow>,
+    create_weak_window: slint::Weak<CreateWindow>,
+) {
+    let pool = pool.clone();
+    let update_weak_window = update_weak_window.clone();
 
-    for row in rows {
-        let items = Rc::new(VecModel::default());
-        let id: i32 = row.get("id");
-        let name: String = row.get("full_name");
-        let age: i32 = row.get("age");
-        let sameness: String = row.try_get("sameness").unwrap_or("null".into());
-        let mother_id: i32 = row.try_get("mother_id").unwrap_or(0);
-        let father_id: i32 = row.try_get("father_id").unwrap_or(0);
-        let phone: String = row.try_get("phone").unwrap_or("null".into());
-        let email: String = row.try_get("email").unwrap_or("null".into());
-        let lost_reason: String = row.try_get("lost_reason").unwrap_or("null".into());
-        let pinned: bool = row.try_get("pinned").unwrap_or(false);
-        let create_at: String = row.try_get("created_at").unwrap_or("null".into());
-        let updated_at: String = row.try_get("updated_at").unwrap_or("null".into());
-        let swarthy: f32 = row.try_get("swarthy").unwrap_or(0.0);
-        let hotness: f32 = row.try_get("hotness").unwrap_or(0.0);
-        let crazy: f32 = row.try_get("crazy").unwrap_or(0.0);
+    let _ = slint::spawn_local({
+        let pool = pool.clone();
+        let app = app.clone();
+        async move {
+            let pool = pool.clone();
+            let mut mother_id_db = 0;
+            let mut father_id_db = 0;
 
-        let mquery = "SELECT full_name FROM relative WHERE id=$1";
-        let fquery = "SELECT full_name FROM relative WHERE id=$1";
+            let mut selected_mother_name = String::new();
+            let mut selected_father_name = String::new();
+            if let Ok(m_row) = sqlx::query("SELECT full_name FROM relative WHERE id = $1")
+                .bind(relative.mother_id)
+                .fetch_one(&pool)
+                .await
+            {
+                selected_mother_name = m_row.get("full_name");
+            }
+            if let Ok(f_row) = sqlx::query("SELECT full_name FROM relative WHERE id = $1")
+                .bind(relative.father_id)
+                .fetch_one(&pool)
+                .await
+            {
+                selected_father_name = f_row.get("full_name");
+            }
+            update_weak_window
+                .unwrap()
+                .global::<TableData>()
+                .set_selected_father_name(SharedString::from(selected_father_name.clone()));
+            update_weak_window
+                .unwrap()
+                .global::<TableData>()
+                .set_selected_mother_name(SharedString::from(selected_mother_name.clone()));
 
-        let mut mother: String = String::from("null");
-        let mut father: String = String::from("null");
+            println!(
+                "names {}, {}",
+                update_weak_window
+                    .unwrap()
+                    .global::<TableData>()
+                    .get_selected_father_name(),
+                update_weak_window
+                    .unwrap()
+                    .global::<TableData>()
+                    .get_selected_mother_name()
+            );
+            if let Ok(m_row) = sqlx::query("select id from relative where full_name = $1")
+                .bind(selected_mother_name)
+                .fetch_one(&pool)
+                .await
+            {
+                mother_id_db = m_row.get("id");
+            }
 
-        if mother_id > 0 {
-            let mrow = sqlx::query(mquery).bind(mother_id).fetch_one(pool).await?;
-            mother = mrow.try_get("full_name").unwrap_or("".to_string());
+            if let Ok(f_row) = sqlx::query("select id from relative where full_name = $1")
+                .bind(selected_father_name)
+                .fetch_one(&pool)
+                .await
+            {
+                father_id_db = f_row.get("id");
+            }
+            if mother_id_db > 0 && father_id_db > 0 {
+                let res = sqlx::query(&sql::update_both_parents())
+                    .bind(relative.sameness.to_string())
+                    .bind(relative.lost_reason.to_string())
+                    .bind(relative.sex.to_string())
+                    .bind(relative.birthday.to_string())
+                    .bind(relative.first_name.to_string())
+                    .bind(relative.middle_name.to_string())
+                    .bind(relative.last_name.to_string())
+                    .bind(relative.phone.to_string())
+                    .bind(relative.email.to_string())
+                    .bind(relative.pinned)
+                    .bind(father_id_db)
+                    .bind(mother_id_db)
+                    .bind(id.to_string())
+                    .execute(&pool)
+                    .await;
+
+                println!(
+                    "updating names {}, {}",
+                    relative.first_name, relative.last_name
+                );
+                println!("updating ids {}, {}", mother_id_db, father_id_db);
+                match res {
+                    Ok(_) => {
+                        let _ = slint::spawn_local({
+                            let pool = pool.clone();
+                            let app = app.clone();
+                            let weak_create_window = create_weak_window.clone();
+                            let weak_update_window = update_weak_window.clone();
+                            async move {
+                                let _ = update_global_data(
+                                    pool,
+                                    app,
+                                    weak_create_window,
+                                    weak_update_window,
+                                )
+                                .await;
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        update_weak_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_error(e.to_string().into());
+                        update_weak_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_update_eror(e.to_string().into());
+                    }
+                }
+            } else if mother_id_db > 0 && father_id_db <= 0 {
+                // add mother only
+                let res = sqlx::query(&sql::update_mother_only())
+                    .bind(relative.sameness.to_string())
+                    .bind(relative.lost_reason.to_string())
+                    .bind(relative.sex.to_string())
+                    .bind(relative.birthday.to_string())
+                    .bind(relative.first_name.to_string())
+                    .bind(relative.middle_name.to_string())
+                    .bind(relative.last_name.to_string())
+                    .bind(relative.phone.to_string())
+                    .bind(relative.email.to_string())
+                    .bind(relative.pinned)
+                    .bind(mother_id_db)
+                    .bind(id.to_string())
+                    .execute(&pool)
+                    .await;
+                match res {
+                    Ok(_) => {
+                        let _ = slint::spawn_local({
+                            let pool = pool.clone();
+                            let app = app.clone();
+                            let weak_create_window = create_weak_window.clone();
+                            let weak_update_window = update_weak_window.clone();
+                            async move {
+                                let _ = update_global_data(
+                                    pool,
+                                    app,
+                                    weak_create_window,
+                                    weak_update_window,
+                                )
+                                .await;
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        update_weak_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_error(e.to_string().into());
+                        update_weak_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_update_eror(e.to_string().into());
+                    }
+                }
+            } else if father_id_db > 0 && mother_id_db <= 0 {
+                // update father only
+                let res = sqlx::query(&sql::update_father_only())
+                    .bind(relative.sameness.to_string())
+                    .bind(relative.lost_reason.to_string())
+                    .bind(relative.sex.to_string())
+                    .bind(relative.birthday.to_string())
+                    .bind(relative.first_name.to_string())
+                    .bind(relative.middle_name.to_string())
+                    .bind(relative.last_name.to_string())
+                    .bind(relative.phone.to_string())
+                    .bind(relative.email.to_string())
+                    .bind(relative.pinned)
+                    .bind(father_id_db)
+                    .bind(id.to_string())
+                    .execute(&pool)
+                    .await;
+                match res {
+                    Ok(_) => {
+                        let _ = slint::spawn_local({
+                            let pool = pool.clone();
+                            let app = app.clone();
+                            let weak_create_window = create_weak_window.clone();
+                            let weak_update_window = update_weak_window.clone();
+                            async move {
+                                let _ = update_global_data(
+                                    pool,
+                                    app,
+                                    weak_create_window,
+                                    weak_update_window,
+                                )
+                                .await;
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        update_weak_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_error(e.to_string().into());
+                        update_weak_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_update_eror(e.to_string().into());
+                    }
+                }
+            } else if father_id_db <= 0 && mother_id_db <= 0 {
+                let res = sqlx::query(&sql::update_no_parents())
+                    .bind(relative.sameness.to_string())
+                    .bind(relative.lost_reason.to_string())
+                    .bind(relative.sex.to_string())
+                    .bind(relative.birthday.to_string())
+                    .bind(relative.first_name.to_string())
+                    .bind(relative.middle_name.to_string())
+                    .bind(relative.last_name.to_string())
+                    .bind(relative.phone.to_string())
+                    .bind(relative.email.to_string())
+                    .bind(relative.pinned)
+                    .bind(id.to_string())
+                    .execute(&pool)
+                    .await;
+                match res {
+                    Ok(_) => {
+                        let _ = slint::spawn_local({
+                            let pool = pool.clone();
+                            let app = app.clone();
+                            let weak_create_window = create_weak_window.clone();
+                            let weak_update_window = update_weak_window.clone();
+                            async move {
+                                let _ = update_global_data(
+                                    pool,
+                                    app,
+                                    weak_create_window,
+                                    weak_update_window,
+                                )
+                                .await;
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        update_weak_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_error(e.to_string().into());
+                        update_weak_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_update_eror(e.to_string().into());
+                        println!("{}", e.to_string());
+                    }
+                }
+            }
         }
-
-        if father_id > 0 {
-            let prow = sqlx::query(fquery).bind(father_id).fetch_one(pool).await?;
-            father = prow.try_get("full_name").unwrap_or("".to_string());
-        }
-        items.push(slint::format!("{id}").into());
-        items.push(slint::format!("{name}").into());
-        items.push(slint::format!("{age}").into());
-        items.push(slint::format!("{sameness}").into());
-        items.push(slint::format!("{mother}").into());
-        items.push(slint::format!("{father}").into());
-        items.push(slint::format!("{phone}").into());
-        items.push(slint::format!("{email}").into());
-        items.push(slint::format!("{pinned}").into());
-        items.push(slint::format!("{hotness}").into());
-        items.push(slint::format!("{swarthy}").into());
-        items.push(slint::format!("{crazy}").into());
-        items.push(slint::format!("{lost_reason}").into());
-        items.push(slint::format!("{create_at}").into());
-        items.push(slint::format!("{updated_at}").into());
-        females.push(items.into());
-    }
-    Ok(females)
+    });
 }
 
-async fn get_all_relative(
-    pool: &SqlitePool,
-) -> Result<Rc<VecModel<ModelRc<StandardListViewItem>>>, Box<dyn std::error::Error>> {
-    let relatives: Rc<VecModel<slint::ModelRc<StandardListViewItem>>> =
-        Rc::new(VecModel::default());
-    let rows = sqlx::query(&sql::get_all_relatives())
-        .fetch_all(pool)
-        .await?;
-    for row in rows {
-        let items = Rc::new(VecModel::default());
-        let id: i32 = row.get("id");
-        let name: String = row.get("full_name");
-        let age: i32 = row.get("age");
-        let sameness: f32 = row.try_get("sameness").unwrap_or(0.0.into());
-        let mother_id: i32 = row.try_get("mother_id").unwrap_or(0);
-        let father_id: i32 = row.try_get("father_id").unwrap_or(0);
-        let phone: String = row.try_get("phone").unwrap_or("null".into());
-        let email: String = row.try_get("email").unwrap_or("null".into());
-        let lost_reason: String = row.try_get("lost_reason").unwrap_or("null".into());
-        let pinned: bool = row.try_get("pinned").unwrap_or(false);
-        let create_at: String = row.try_get("created_at").unwrap_or("null".into());
-        let updated_at: String = row.try_get("updated_at").unwrap_or("null".into());
+// function to be called on_create_new_relative callback
+fn create_relative(
+    relative: Relative,
+    pool: SqlitePool,
+    weak_create_window: slint::Weak<CreateWindow>,
+    weak_update_window: slint::Weak<UpdateWindow>,
+    app: slint::Weak<Main>,
+) {
+    let pool = pool.clone();
+    let weak_create_window = weak_create_window.clone();
 
-        let mquery = "select full_name from relative where id=$1";
-        let fquery = "select full_name from relative where id=$1";
+    let _ = slint::spawn_local({
+        let pool = pool.clone();
+        let app = app.clone();
+        async move {
+            let males = repo::get_male_relatives(&pool).await.unwrap();
+            let females2 = repo::get_mothers(&pool).await.unwrap();
+            weak_create_window
+                .unwrap()
+                .global::<TableData>()
+                .set_males(males.clone().into());
+            weak_create_window
+                .unwrap()
+                .global::<TableData>()
+                .set_females2(females2.clone().into());
+            let pool = pool.clone();
+            let mut mother_id_db = 0;
+            let mut father_id_db = 0;
 
-        let mut mother: String = String::from("null");
-        let mut father: String = String::from("null");
+            let mut selected_mother_name = String::new();
+            let mut selected_father_name = String::new();
+            if let Ok(m_row) = sqlx::query("SELECT full_name FROM relative WHERE id = $1")
+                .bind(relative.mother_id)
+                .fetch_one(&pool)
+                .await
+            {
+                selected_mother_name = m_row.get("full_name");
+            }
+            if let Ok(f_row) = sqlx::query("SELECT full_name FROM relative WHERE id = $1")
+                .bind(relative.father_id)
+                .fetch_one(&pool)
+                .await
+            {
+                selected_father_name = f_row.get("full_name");
+            }
+            weak_create_window
+                .unwrap()
+                .global::<TableData>()
+                .set_selected_father_name(SharedString::from(selected_father_name.clone()));
+            weak_create_window
+                .unwrap()
+                .global::<TableData>()
+                .set_selected_mother_name(SharedString::from(selected_mother_name.clone()));
 
-        if mother_id > 0 {
-            let mrow = sqlx::query(mquery).bind(mother_id).fetch_one(pool).await?;
-            mother = mrow.try_get("full_name").unwrap_or("".to_string());
+            println!(
+                "parent names on create {}, {}",
+                weak_create_window
+                    .unwrap()
+                    .global::<TableData>()
+                    .get_selected_father_name(),
+                weak_create_window
+                    .unwrap()
+                    .global::<TableData>()
+                    .get_selected_mother_name()
+            );
+
+            if let Ok(m_row) = sqlx::query("select id from relative where full_name = $1")
+                .bind(selected_mother_name)
+                .fetch_one(&pool)
+                .await
+            {
+                mother_id_db = m_row.get("id");
+            }
+
+            if let Ok(f_row) = sqlx::query("select id from relative where full_name = $1")
+                .bind(selected_father_name)
+                .fetch_one(&pool)
+                .await
+            {
+                father_id_db = f_row.get("id");
+            }
+
+            if mother_id_db > 0 && father_id_db > 0 {
+                // add new with both parents
+                let res = sqlx::query(&sql::create_new_relative_with_both_parents())
+                    .bind(relative.sameness.to_string())
+                    .bind(relative.lost_reason.to_string())
+                    .bind(relative.sex.to_string())
+                    .bind(relative.birthday.to_string())
+                    .bind(relative.first_name.to_string())
+                    .bind(relative.middle_name.to_string())
+                    .bind(relative.last_name.to_string())
+                    .bind(relative.phone.to_string())
+                    .bind(relative.email.to_string())
+                    .bind(relative.pinned)
+                    .bind(mother_id_db)
+                    .bind(father_id_db)
+                    .bind(relative.employable.to_string())
+                    .bind(relative.swarthy.to_string())
+                    .bind(relative.hotness.to_string())
+                    .bind(relative.crazy.to_string())
+                    .execute(&pool)
+                    .await;
+                match res {
+                    Ok(_) => {
+                        let _ = slint::spawn_local({
+                            let pool = pool.clone();
+                            let app = app.clone();
+                            let weak_create_window = weak_create_window.clone();
+                            let weak_update_window = weak_update_window.clone();
+                            async move {
+                                let _ = update_global_data(
+                                    pool,
+                                    app,
+                                    weak_create_window,
+                                    weak_update_window,
+                                )
+                                .await;
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        weak_create_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_error(e.to_string().into());
+                    }
+                }
+            } else if mother_id_db > 0 && father_id_db <= 0 {
+                // add new with mother only
+                let res = sqlx::query(&sql::create_new_relative_with_mother_only())
+                    .bind(relative.sameness.to_string())
+                    .bind(relative.lost_reason.to_string())
+                    .bind(relative.sex.to_string())
+                    .bind(relative.birthday.to_string())
+                    .bind(relative.first_name.to_string())
+                    .bind(relative.middle_name.to_string())
+                    .bind(relative.last_name.to_string())
+                    .bind(relative.phone.to_string())
+                    .bind(relative.email.to_string())
+                    .bind(relative.pinned)
+                    .bind(mother_id_db)
+                    .bind(relative.employable.to_string())
+                    .bind(relative.swarthy.to_string())
+                    .bind(relative.hotness.to_string())
+                    .bind(relative.crazy.to_string())
+                    .execute(&pool)
+                    .await;
+                match res {
+                    Ok(_) => {
+                        let _ = slint::spawn_local({
+                            let pool = pool.clone();
+                            let app = app.clone();
+                            let weak_create_window = weak_create_window.clone();
+                            let weak_update_window = weak_update_window.clone();
+                            async move {
+                                let _ = update_global_data(
+                                    pool,
+                                    app,
+                                    weak_create_window,
+                                    weak_update_window,
+                                )
+                                .await;
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        weak_create_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_error(e.to_string().into());
+                    }
+                }
+            } else if father_id_db > 0 && mother_id_db <= 0 {
+                // update father only
+                let res = sqlx::query(&sql::create_new_relative_with_father_only())
+                    .bind(relative.sameness.to_string())
+                    .bind(relative.lost_reason.to_string())
+                    .bind(relative.sex.to_string())
+                    .bind(relative.birthday.to_string())
+                    .bind(relative.first_name.to_string())
+                    .bind(relative.middle_name.to_string())
+                    .bind(relative.last_name.to_string())
+                    .bind(relative.phone.to_string())
+                    .bind(relative.email.to_string())
+                    .bind(relative.pinned)
+                    .bind(father_id_db)
+                    .bind(relative.employable.to_string())
+                    .bind(relative.swarthy.to_string())
+                    .bind(relative.hotness.to_string())
+                    .bind(relative.crazy.to_string())
+                    .execute(&pool)
+                    .await;
+                match res {
+                    Ok(_) => {
+                        let _ = slint::spawn_local({
+                            let pool = pool.clone();
+                            let app = app.clone();
+                            let weak_create_window = weak_create_window.clone();
+                            let weak_update_window = weak_update_window.clone();
+                            async move {
+                                let _ = update_global_data(
+                                    pool,
+                                    app,
+                                    weak_create_window,
+                                    weak_update_window,
+                                )
+                                .await;
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        weak_create_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_error(e.to_string().into());
+                    }
+                }
+            } else if mother_id_db <= 0 && father_id_db <= 0 {
+                // create relative with no parents
+                let res = sqlx::query(&sql::create_new_relative_no_parents())
+                    .bind(relative.sameness.to_string())
+                    .bind(relative.lost_reason.to_string())
+                    .bind(relative.sex.to_string())
+                    .bind(relative.birthday.to_string())
+                    .bind(relative.first_name.to_string())
+                    .bind(relative.middle_name.to_string())
+                    .bind(relative.last_name.to_string())
+                    .bind(relative.phone.to_string())
+                    .bind(relative.email.to_string())
+                    .bind(relative.pinned)
+                    .bind(relative.employable.to_string())
+                    .bind(relative.swarthy.to_string())
+                    .bind(relative.hotness.to_string())
+                    .bind(relative.crazy.to_string())
+                    .execute(&pool)
+                    .await;
+                match res {
+                    Ok(_) => {
+                        let _ = slint::spawn_local({
+                            let pool = pool.clone();
+                            let app = app.clone();
+                            let weak_create_window = weak_create_window.clone();
+                            let weak_update_window = weak_update_window.clone();
+                            async move {
+                                let _ = update_global_data(
+                                    pool,
+                                    app,
+                                    weak_create_window,
+                                    weak_update_window,
+                                )
+                                .await;
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        weak_create_window
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_error(e.to_string().into());
+                    }
+                }
+            }
         }
-
-        if father_id > 0 {
-            let prow = sqlx::query(fquery).bind(father_id).fetch_one(pool).await?;
-            father = prow.try_get("full_name").unwrap_or("".to_string());
-        }
-        items.push(slint::format!("{id}").into());
-        items.push(slint::format!("{name}").into());
-        items.push(slint::format!("{age}").into());
-        items.push(slint::format!("{sameness}").into());
-        items.push(slint::format!("{mother}").into());
-        items.push(slint::format!("{father}").into());
-        items.push(slint::format!("{phone}").into());
-        items.push(slint::format!("{email}").into());
-        items.push(slint::format!("{pinned}").into());
-        items.push(slint::format!("{lost_reason}").into());
-        items.push(slint::format!("{create_at}").into());
-        items.push(slint::format!("{updated_at}").into());
-        relatives.push(items.into());
-    }
-    Ok(relatives)
+    });
 }
 
-async fn get_male_relatives(
-    pool: &SqlitePool,
-) -> Result<Rc<VecModel<ModelRc<StandardListViewItem>>>, Box<dyn std::error::Error>> {
-    let females: Rc<VecModel<slint::ModelRc<StandardListViewItem>>> = Rc::new(VecModel::default());
-    let rows = sqlx::query(&sql::get_males()).fetch_all(pool).await?;
-    for row in rows {
-        let items = Rc::new(VecModel::default());
-        let id: i32 = row.get("id");
-        let name: String = row.get("full_name");
-        let phone: String = row.try_get("phone").unwrap_or("null".into());
-        let age: i32 = row.try_get("age").unwrap_or(0);
-
-        items.push(slint::format!("{id}").into());
-        items.push(slint::format!("{name}").into());
-        items.push(slint::format!("{age}").into());
-        items.push(slint::format!("{phone}").into());
-        females.push(items.into());
-    }
-    Ok(females)
-}
-
-async fn get_mothers(
-    pool: &SqlitePool,
-) -> Result<Rc<VecModel<ModelRc<StandardListViewItem>>>, Box<dyn std::error::Error>> {
-    let females: Rc<VecModel<slint::ModelRc<StandardListViewItem>>> = Rc::new(VecModel::default());
-    let rows = sqlx::query(&sql::get_females()).fetch_all(pool).await?;
-    for row in rows {
-        let items = Rc::new(VecModel::default());
-        let name: String = row.get("full_name");
-        let phone: String = row.try_get("phone").unwrap_or("null".into());
-        let age: i32 = row.try_get("age").unwrap_or(0);
-        let id: i32 = row.get("id");
-        items.push(slint::format!("{id}").into());
-        items.push(slint::format!("{name}").into());
-        items.push(slint::format!("{age}").into());
-        items.push(slint::format!("{phone}").into());
-        females.push(items.into());
-    }
-    Ok(females)
-}
-
-async fn get_all_employees(
-    pool: &SqlitePool,
-) -> Result<Rc<VecModel<ModelRc<StandardListViewItem>>>, Box<dyn std::error::Error>> {
-    let relatives: Rc<VecModel<slint::ModelRc<StandardListViewItem>>> =
-        Rc::new(VecModel::default());
-    let rows = sqlx::query(&sql::get_all_employees())
-        .fetch_all(pool)
-        .await?;
-    for row in rows {
-        let items = Rc::new(VecModel::default());
-        let id: i32 = row.get("id");
-        let name: String = row.get("full_name");
-        let age: i32 = row.get("age");
-        let sameness: f32 = row.try_get("sameness").unwrap_or(0.0.into());
-        let mother_id: i32 = row.try_get("mother_id").unwrap_or(0);
-        let father_id: i32 = row.try_get("father_id").unwrap_or(0);
-        let phone: String = row.try_get("phone").unwrap_or("null".into());
-        let email: String = row.try_get("email").unwrap_or("null".into());
-        let lost_reason: String = row.try_get("lost_reason").unwrap_or("null".into());
-        let pinned: bool = row.try_get("pinned").unwrap_or(false);
-        let create_at: String = row.try_get("created_at").unwrap_or("null".into());
-        let updated_at: String = row.try_get("updated_at").unwrap_or("null".into());
-        let employable: f32 = row.try_get("employable").unwrap_or(0.0);
-
-        let mquery = "select full_name from relative where id=$1";
-        let fquery = "select full_name from relative where id=$1";
-
-        let mut mother: String = String::from("null");
-        let mut father: String = String::from("null");
-
-        if mother_id > 0 {
-            let mrow = sqlx::query(mquery).bind(mother_id).fetch_one(pool).await?;
-            mother = mrow.try_get("full_name").unwrap_or("".to_string());
-        }
-
-        if father_id > 0 {
-            let prow = sqlx::query(fquery).bind(father_id).fetch_one(pool).await?;
-            father = prow.try_get("full_name").unwrap_or("".to_string());
-        }
-        items.push(slint::format!("{id}").into());
-        items.push(slint::format!("{name}").into());
-        items.push(slint::format!("{age}").into());
-        items.push(slint::format!("{sameness}").into());
-        items.push(slint::format!("{mother}").into());
-        items.push(slint::format!("{father}").into());
-        items.push(slint::format!("{phone}").into());
-        items.push(slint::format!("{email}").into());
-        items.push(slint::format!("{pinned}").into());
-        items.push(slint::format!("{lost_reason}").into());
-        items.push(slint::format!("{employable}").into());
-        items.push(slint::format!("{create_at}").into());
-        items.push(slint::format!("{updated_at}").into());
-        relatives.push(items.into());
-    }
-    Ok(relatives)
+// function to update global data (singleton)
+async fn update_global_data(
+    pool: SqlitePool,
+    app: slint::Weak<Main>,
+    create_window: slint::Weak<CreateWindow>,
+    update_window: slint::Weak<UpdateWindow>,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let females = repo::get_female_relatives(&pool).await?;
+    let relatives = repo::get_all_relative(&pool).await?;
+    let employees = repo::get_all_employees(&pool).await?;
+    let males = repo::get_male_relatives(&pool).await?;
+    let females2 = repo::get_mothers(&pool).await?;
+    create_window
+        .unwrap()
+        .global::<TableData>()
+        .set_females(females.clone().into());
+    create_window
+        .unwrap()
+        .global::<TableData>()
+        .set_relative(relatives.clone().into());
+    create_window
+        .unwrap()
+        .global::<TableData>()
+        .set_females2(females2.clone().into());
+    create_window
+        .unwrap()
+        .global::<TableData>()
+        .set_males(males.clone().into());
+    update_window
+        .unwrap()
+        .global::<TableData>()
+        .set_females(females.clone().into());
+    update_window
+        .unwrap()
+        .global::<TableData>()
+        .set_relative(relatives.clone().into());
+    update_window
+        .unwrap()
+        .global::<TableData>()
+        .set_females2(females2.clone().into());
+    update_window
+        .unwrap()
+        .global::<TableData>()
+        .set_males(males.clone().into());
+    app.unwrap()
+        .global::<TableData>()
+        .set_females(females.clone().into());
+    app.unwrap()
+        .global::<TableData>()
+        .set_relative(relatives.clone().into());
+    app.unwrap()
+        .global::<TableData>()
+        .set_employees(employees.clone().into());
+    app.unwrap()
+        .global::<TableData>()
+        .set_females2(females2.clone().into());
+    app.unwrap()
+        .global::<TableData>()
+        .set_males(males.clone().into());
+    Ok(())
 }

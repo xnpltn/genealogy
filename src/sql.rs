@@ -120,7 +120,7 @@ pub fn update_mother_only() -> String {
                 phone = $8,
                 email = $9,
                 pinned = $10,
-                mother_id = $11
+                mother_id =  $11
             WHERE 
                 id = $12
             ;
@@ -177,13 +177,32 @@ pub fn update_both_parents() -> String {
     query
 }
 
+pub fn update_no_parents() -> String {
+    let query = r#"
+            UPDATE relative 
+            SET 
+                sameness = $1,
+                lost_reason = $2,
+                sex = $3,
+                birthday = $4,
+                fname = $5,
+                mname = $6,
+                lname = $7,
+                phone = $8,
+                email = $9,
+                pinned = $10
+            WHERE 
+                id = $11
+            ;
+
+    "#
+    .to_string();
+    query
+}
 pub fn get_females() -> String {
     let query = r#"
         SELECT 
-            id,
-            full_name,
-            phone,
-            age
+            full_name
         FROM 
             relative
         WHERE
@@ -199,10 +218,7 @@ pub fn get_females() -> String {
 pub fn get_males() -> String {
     let query = r#"
         SELECT 
-            id,
-            full_name,
-            age,
-            phone
+            full_name
         FROM 
             relative
         WHERE
