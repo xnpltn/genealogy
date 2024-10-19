@@ -1,0 +1,90 @@
+
+import { StandardTableView } from "std-widgets.slint";
+import { TableData ,ActiveTab, Relative} from "../types.slint";
+export component Table inherits StandardTableView {
+    callback show-popup-window();
+    in property <[[StandardListViewItem]]> data;
+    in-out property <[TableColumn]> c: [
+        { title: "id" },
+        { title: "Name" },
+        { title: "Age" },
+        { title: "Sameness" },
+        { title: "Mother" },
+        { title: "Father" },
+        { title: "Phone" },
+        { title: "Email" },
+        { title: "Pinned" },
+        { title: "Lost Reason" },
+        { title: "Created" },
+        { title: "Updated" }
+    ];
+
+    current-row-changed => {
+        TableData.current_row = self.current-row;
+        TableData.has_selected_row = true;
+        TableData.current-row-changed(TableData.current_row);
+        show_popup_window();
+    }
+    columns: c;
+    rows: data;
+}
+
+export component FemalesTable inherits StandardTableView {
+    callback show-popup-window();
+    in property <[[StandardListViewItem]]> data;
+    in-out property <[TableColumn]> c: [
+        { title: "id" },
+        { title: "Name" },
+        { title: "Age" },
+        { title: "Sameness" },
+        { title: "Mother" },
+        { title: "Father" },
+        { title: "Phone" },
+        { title: "Email" },
+        { title: "Pinned" },
+        { title: "hotness" },
+        { title: "swarthy" },
+        { title: "crazy" },
+        { title: "Lost Reason" },
+        { title: "Created" },
+        { title: "Updated" }
+    ];
+
+    current-row-changed => {
+        TableData.current_row = self.current-row;
+        TableData.has_selected_row = true;
+        TableData.current-row-changed(TableData.current_row);
+        show_popup_window();
+    }
+    columns: c;
+    rows: data;
+}
+
+export component EmployeesTable inherits StandardTableView {
+    callback show-popup-window();
+    in property <[[StandardListViewItem]]> data;
+    in-out property <[TableColumn]> c: [
+        { title: "id" },
+        { title: "Name" },
+        { title: "Age" },
+        { title: "Sameness" },
+        { title: "Mother" },
+        { title: "Father" },
+        { title: "Phone" },
+        { title: "Email" },
+        { title: "Pinned" },
+        { title: "Lost Reason" },
+        { title: "employable" },
+        { title: "Created" },
+        { title: "Updated" }
+    ];
+
+    current-row-changed => {
+        TableData.current_row = self.current-row;
+        TableData.has_selected_row = true;
+        TableData.current-row-changed(TableData.current_row);
+        show_popup_window();
+    }
+    columns: c;
+    rows: data;
+}

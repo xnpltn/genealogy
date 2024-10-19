@@ -1,0 +1,78 @@
+
+export struct Relative {
+    id: string,
+    first-name: string,
+    middle-name: string,
+    last-name: string,
+    sex: string,
+    phone: string,
+    email: string,
+    pinned: bool,
+    birthday: string,
+    lost-reason: string,
+    sameness: string,
+    note: string,
+    hotness: float,
+    swarthy: float,
+    crazy:float,
+    employable: float,
+    mother_id: int,
+    father_id: int,
+}
+export struct Note {
+  id: string,
+  relative_id: string,
+  pinned: string,
+  text: string,
+}
+
+export struct File {
+  id: string,
+  imported_name: string,
+  imported_hash: string,
+  relative_id: string,
+  type: string,
+  size: string,
+  filename: string,
+  pinned: string,
+    
+}
+
+export enum ActiveTab{relative, employees, females}
+
+
+export global TableData {
+    in property <[[StandardListViewItem]]> relative;
+    in property <[[StandardListViewItem]]> females;
+    in property <[[StandardListViewItem]]> employees;
+    in property <[string]> males;
+    in property <[string]> females2;
+    in-out property <string> selected-mother-name;
+    in-out property <string> selected-father-name;
+    in-out property <int> current_row;
+    in-out property <bool> has_selected_row;
+    in-out property <ActiveTab> active-tab;
+    callback current-row-changed(int);
+    in-out property <Relative> active-relative;
+    in-out property <Relative> new-relative;
+    in-out property <string> active-relative-image;
+    callback create-new-relative(Relative, string, string); // first string is mother name, second is father name
+    callback update-relative(string, Relative, string, string); // first parameter is an id used to track the relative. third is mother, fourth is father
+    callback delete-relative(string);
+    in-out property <string> error;
+    in-out property <string> success-msg;
+    in-out property <string> image-error;
+    in-out property <string> files_error;
+    in-out property <string> notes-error;
+    callback add-files-for-relative(int, string);
+    callback add-image-for-relative(string);
+    callback add-note-for-relative(string, string); // first parameter is id. second in the actual note text
+    in-out property <[string]> selected-relative-files;
+    in-out property <[string]> selected-relative-notes;
+    callback show-update-window();
+    callback show-add-window();
+    in-out property <string> create-success;
+    in-out property <string> create-error;
+    in-out property <string> update-success;
+    in-out property <string> update-eror;
+}
