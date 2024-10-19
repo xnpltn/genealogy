@@ -265,7 +265,6 @@ export component UpdateView inherits Rectangle {
 
                                 mother := ComboBox {
                                     model: TableData.females2;
-                                    current-value: TableData.selected-mother-name;
                                 }
                             }
 
@@ -302,9 +301,7 @@ export component UpdateView inherits Rectangle {
                                         mother-id: TableData.active-relative.mother-id,
                                         father-id: TableData.active-relative.father-id,
                                     };
-                                    TableData.selected-mother-name = mother.current-value;
-                                    TableData.selected-father-name = father.current-value;
-                                    TableData.update-relative(TableData.active-relative.id,relative);
+                                    TableData.update-relative(TableData.active-relative.id,relative, mother.current-value, father.current-value);
                                     message.show();
                                 }
                             }

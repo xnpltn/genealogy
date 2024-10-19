@@ -56,8 +56,8 @@ export global TableData {
     in-out property <Relative> active-relative;
     in-out property <Relative> new-relative;
     in-out property <string> active-relative-image;
-    callback create-new-relative(Relative);
-    callback update-relative(string, Relative); // first parameter is an id used to track the relative
+    callback create-new-relative(Relative, string, string); // first string is mother name, second is father name
+    callback update-relative(string, Relative, string, string); // first parameter is an id used to track the relative. third is mother, fourth is father
     callback delete-relative(string);
     in-out property <string> error;
     in-out property <string> success-msg;

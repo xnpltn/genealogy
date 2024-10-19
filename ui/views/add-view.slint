@@ -190,9 +190,8 @@ export component AddView inherits Rectangle {
 
                                 mother := ComboBox {
                                     model: TableData.females2;
-                                    selected(value) => {
-                                        TableData.selected-mother-name = value;
-                                    }
+                                    current-value: "";
+                                    current-index: -1;
                                 }
                             }
 
@@ -203,9 +202,8 @@ export component AddView inherits Rectangle {
 
                                 father := ComboBox {
                                     model: TableData.males;
-                                    selected(value) => {
-                                        TableData.selected-father-name = value;
-                                    }
+                                    current-value: "";
+                                    current-index: -1;
                                 }
                             }
                         }
@@ -230,7 +228,8 @@ export component AddView inherits Rectangle {
                                         crazy: crazy.value,
                                         swarthy: swarthy.value,
                                     };
-                                    TableData.create-new-relative(relative);
+                                    TableData.create-new-relative(relative, mother.current-value, father.current-value);
+                                    relative = { };
                                 }
                             }
                         }

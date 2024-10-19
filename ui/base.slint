@@ -5,6 +5,7 @@ import { TabsView } from "views/tabs-view.slint";
 import { Palette, Button } from "std-widgets.slint";
 import { TableData} from "types.slint";
 import { Switch, TextEdit, HorizontalBox } from "std-widgets.slint";
+import { TaskBar } from "components/TaskBar.slint";
 
 export { TableData }
 
@@ -35,6 +36,57 @@ export component Main inherits Window {
     min-width: 720px;
     min-height: 480px;
     title: "Genealogy App";
+    note-pop-up := PopupWindow {
+        width: root.width * 40%;
+        height: root.height * 40%;
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+
+        close-on-click: false;
+        Rectangle {
+            padding: 20px;
+            border-radius: 10px;
+            border-color: black;
+            border-width: 3px;
+            background: red;
+            VerticalLayout {
+                TaskBar {
+                    h: 50px;
+                    padding: 20px;
+                    alignment: space-between;
+                    background: whitesmoke;
+                    Text {
+                        text: @tr("Add Note for {} {}", TableData.active-relative.first-name, TableData.active-relative.last-name);
+                        font-size: 16px;
+                        font-weight: 300;
+                    }
+
+                    Button {
+                        text: "close";
+                        clicked => {
+                            note-pop-up.close()
+                        }
+                    }
+                }
+
+                VerticalLayout {
+                    note := TextEdit {
+                        height: 200px;
+                        text: "Lorem Ipsum";
+                        placeholder-text: "Type note here";
+                    }
+
+                    Button {
+                        text: "Save";
+                        clicked => {
+                            TableData.add-note-for-relative(TableData.active-relative.id, note.text);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     HorizontalLayout {
         VerticalLayout {
             Header {
@@ -65,7 +117,11 @@ export component Main inherits Window {
                 }
             }
 
-            TabsView { }
+            TabsView {
+                open_notes_popup => {
+                    note-pop-up.show();
+                }
+            }
         }
     }
 }

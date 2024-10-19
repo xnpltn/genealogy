@@ -45,11 +45,10 @@ export component NotesSect inherits Rectangle {
             if TableData.has_selected_row: TaskBar {
                 alignment: LayoutAlignment.end;
                 h: 20px;
-                CustomButton {
-                    background: red;
+                Button {
+                    text: "Edit";
                     height: 40px;
-                    width: 100px;
-                    title: "Edit";
+                    width: 140px;
                     clicked => {
                         TableData.show-update-window();
                     }
@@ -98,15 +97,19 @@ export component NotesSect inherits Rectangle {
 
                                 ListView {
                                     for file in TableData.selected-relative-files: Rectangle {
-                                        border-radius: 2px;
-                                        border-width: 2px;
+                                        border-radius: 4px;
+                                        border-width: 1px;
+                                        border-color: #ddd;
+                                        background: white;
+                                        height: 35px;
                                         padding: 10px;
                                         HorizontalLayout {
-                                            alignment: start;
+                                            spacing: 8px;
                                             Text {
                                                 text: file;
-                                                font-size: 20px;
-                                                color: #012;
+                                                font-size: 16px;
+                                                color: #2c3e50;
+                                                vertical-alignment: center;
                                             }
                                         }
                                     }
@@ -152,15 +155,19 @@ export component NotesSect inherits Rectangle {
 
                                 ListView {
                                     for note in TableData.selected-relative-notes: Rectangle {
-                                        border-radius: 2px;
-                                        border-width: 2px;
+                                        border-radius: 4px;
+                                        border-width: 1px;
+                                        border-color: #ddd;
+                                        background: white;
+                                        height: 35px;
                                         padding: 10px;
                                         HorizontalLayout {
-                                            alignment: start;
+                                            spacing: 8px;
                                             Text {
                                                 text: note;
-                                                font-size: 20px;
-                                                color: #012;
+                                                font-size: 16px;
+                                                color: #2c3e50;
+                                                vertical-alignment: center;
                                             }
                                         }
                                     }

@@ -12,27 +12,7 @@ export component TaskBar inherits Rectangle {
     height: h;
     background: Palette.color-scheme == ColorScheme.dark ? color-dark : color-light;
     HorizontalLayout {
-        alignment: alignment; /*
-        CustomButton {
-            title: "Close";
-            height: parent.height - 10px;
-            clicked => {
-                // reset
-                TableData.error = "";
-                TableData.selected-father-id = -1;
-                TableData.selected-mother-id = -1;
-                TableData.notes-error = "";
-                TableData.files_error = "";
-                TableData.image-error = "";
-                close-popup()
-            }
-        }
-
-        Text {
-            text: TableData.error;
-            color: Colors.red;
-        }
-    */
+        alignment: alignment;
         @children
     }
 }

@@ -278,7 +278,7 @@ pub fn add_note_for_relative() -> String {
         INSERT INTO note
             (relative_id, text)
         VALUES
-            ($1, $1)
+            ($1, $2)
     ;"#;
     query.to_string()
 }

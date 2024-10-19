@@ -14,6 +14,7 @@ pub async fn get_male_relatives(
 ) -> Result<Rc<VecModel<SharedString>>, Box<dyn std::error::Error>> {
     let names = Rc::new(VecModel::default());
     let rows = sqlx::query(&sql::get_males()).fetch_all(pool).await?;
+    names.push(SharedString::from("<None>"));
     for row in rows {
         let name: String = row.get("full_name");
         names.push(slint::format!("{name}"));
@@ -27,6 +28,7 @@ pub async fn get_mothers(
 ) -> Result<Rc<VecModel<SharedString>>, Box<dyn std::error::Error>> {
     let names = Rc::new(VecModel::default());
     let rows = sqlx::query(&sql::get_females()).fetch_all(pool).await?;
+    names.push(SharedString::from("<None>"));
     for row in rows {
         let name: String = row.get("full_name");
         names.push(slint::format!("{name}"));
