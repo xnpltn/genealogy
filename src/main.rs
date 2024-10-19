@@ -201,7 +201,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .unwrap()
                                 .global::<TableData>()
                                 .set_active_relative(relative.clone());
-                            println!("{selected_father_name} and {selected_mother_name}");
                             weak_app
                                 .unwrap()
                                 .global::<TableData>()
