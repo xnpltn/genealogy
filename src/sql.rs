@@ -89,6 +89,9 @@ pub fn get_all_employees() -> String {
             relative 
         WHERE 
             employable > 0
+        ORDER BY 
+            pinned
+        DESC
         ;
     "#;
     query.to_string()
@@ -249,7 +252,7 @@ pub fn get_files_for_relative() -> String {
     let query = r#"
         SELECT * FROM file WHERE relative_id = (
             SELECT id FROM relative WHERE id = $1
-        );
+        ) ORDER BY pinned DESC;
     "#;
     query.to_string()
 }
@@ -258,7 +261,7 @@ pub fn get_notes_for_relative() -> String {
     let query = r#"
         SELECT * FROM note WHERE relative_id = (
             SELECT id FROM relative WHERE id = $1
-        );
+        ) ORDER BY pinned DESC;
     "#;
     query.to_string()
 }

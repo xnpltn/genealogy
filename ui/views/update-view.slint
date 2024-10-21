@@ -1,6 +1,7 @@
 import { CustomButton } from "../components/button.slint";
 import { Button, CheckBox, Switch, HorizontalBox, Slider, LineEdit, GroupBox, ComboBox, DatePickerPopup, VerticalBox, Palette, StandardTableView , ScrollView, TextEdit} from "std-widgets.slint";
-import { TableData , Relative} from "../types.slint";
+import { TableData , Relative, CrudMessages} from "../types.slint";
+import { MessagePopup } from "../components/message-popup.slint";
 
 
 export component UpdateView inherits Rectangle {
@@ -81,11 +82,96 @@ export component UpdateView inherits Rectangle {
             }
         }
 
+        image-message-popup := MessagePopup {
+            message-on-error: CrudMessages.upload-image-error;
+            message-on-success: CrudMessages.upload-image-success;
+            x-pos: (root.width - self.width) / 2;
+            y-pos: (root.height - self.height) / 2;
+        }
+
+        delete-relative-pupup := MessagePopup {
+            message-on-error: CrudMessages.delete-relative-error;
+            message-on-success: CrudMessages.delete-relative-success;
+            x-pos: (root.width - self.width) / 2;
+            y-pos: (root.height - self.height) / 2;
+        }
+
+        delete-prompt := PopupWindow {
+            x: (root.width - self.width) / 2;
+            y: (root.height - self.height) / 2;
+            close-on-click: false;
+            height: 200px;
+            width: 400px;
+            Rectangle {
+                height: parent.height;
+                width: parent.width;
+                background: #ffffff;
+                border-radius: 12px;
+                drop-shadow-color: #00000020;
+                drop-shadow-offset-x: 0px;
+                drop-shadow-offset-y: 4px;
+                drop-shadow-blur: 16px;
+                HorizontalBox {
+                    alignment: center;
+                    CustomButton {
+                        title: "Delete";
+                        background: red;
+                        text-color: white;
+                        clicked => {
+                            TableData.delete-relative(TableData.active-relative.id);
+                            delete-relative-pupup.show()
+                        }
+                    }
+
+                    CustomButton {
+                        title: "Cancel";
+                        background: green;
+                        text-color: black;
+                        clicked => {
+                            delete-prompt.close();
+                        }
+                    }
+                }
+            }
+        }
+
         ScrollView {
             VerticalLayout {
                 spacing: 15px;
+                HorizontalBox {
+                    width: 100%;
+                    spacing: 20px;
+                    VerticalLayout {
+                        alignment: center;
+                        Rectangle {
+                            height: 100px;
+                            width: 100px;
+                            border-radius: 5px;
+                            background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
+                            Image {
+                                source: TableData.active-profile-image;
+                                height: 100px;
+                                width: 100px;
+                            }
+                        }
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        CustomButton {
+                            title: "Upload new";
+                            height: 40px;
+                            width: 120px;
+                            background: blue;
+                            clicked => {
+                                TableData.add-image-for-relative(TableData.active-relative.id);
+                                image-message-popup.show()
+                            }
+                        }
+                    }
+                }
+
                 GroupBox {
-                    title: "Personal Information";
                     VerticalLayout {
                         spacing: 10px;
                         HorizontalBox {
@@ -346,7 +432,7 @@ export component UpdateView inherits Rectangle {
                                 title: @tr("Delete");
                                 background: red;
                                 clicked => {
-                                    TableData.delete-relative(TableData.active-relative.id);
+                                    delete-prompt.show()
                                 }
                             }
                         }

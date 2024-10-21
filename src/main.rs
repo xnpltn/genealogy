@@ -5,6 +5,7 @@ use sqlx::{migrate, Row};
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
 use std::fs;
 use std::io;
+use std::ops::Deref;
 use std::rc::Rc;
 use std::{env, u64};
 
@@ -76,7 +77,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pool = SqlitePool::connect(std::format!("{}/store.db", work_dir).as_str()).await?;
     migrate!("./migrations").run(&pool).await?;
     let app = Main::new()?;
-    let update_window = UpdateWindow::new()?;
 
     let females = repo::get_female_relatives(&pool).await?;
     let relatives = repo::get_all_relative(&pool).await?;
@@ -93,20 +93,294 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .set_employees(employees.clone().into());
 
     app.global::<TableData>().on_show_update_window({
-        let update_window = update_window.as_weak();
+        let pool = pool.clone();
+        let app = app.as_weak();
+        let males = repo::get_male_relatives(&pool).await?;
+        let females2 = repo::get_mothers(&pool).await?;
         move || {
-            update_window.unwrap().show().unwrap();
+            let update_window = UpdateWindow::new().unwrap();
+            update_window.show().unwrap();
+            let update_window = update_window.as_weak();
+            let active_relative = app
+                .upgrade()
+                .unwrap()
+                .global::<TableData>()
+                .get_active_relative();
+            update_window
+                .upgrade()
+                .unwrap()
+                .global::<TableData>()
+                .set_active_relative(active_relative.clone());
+            let _ = slint::spawn_local({
+                let update_window = update_window.clone();
+                let id = active_relative.id.clone();
+                let pool = pool.clone();
+                async move {
+                    let mut filename = String::new();
+                    if let Ok(f) = sqlx::query(
+                        r#"
+                                                SELECT filename 
+                                                FROM image 
+                                                WHERE relative_id = $1
+                                                ORDER BY created_at DESC
+                                                LIMIT 1;
+                                            "#,
+                    )
+                    .bind(id.clone().to_string())
+                    .fetch_one(&pool)
+                    .await
+                    {
+                        filename = f.try_get("filename").unwrap_or("".to_string());
+                    }
+                    println!("filename is: {filename}");
+                    let image =
+                        slint::Image::load_from_path(std::path::Path::new(filename.as_str()));
+                    match image {
+                        Ok(img) => {
+                            update_window
+                                .upgrade()
+                                .unwrap()
+                                .global::<TableData>()
+                                .set_active_profile_image(img);
+                        }
+                        Err(e) => {
+                            println!("error loading emage: {}", e.to_string());
+                            update_window
+                                .upgrade()
+                                .unwrap()
+                                .global::<CrudMessages>()
+                                .set_upload_image_error(slint::format!(
+                                    "error loading image: {}",
+                                    e.to_string()
+                                ));
+                        }
+                    }
+                }
+            });
+            update_window
+                .unwrap()
+                .global::<TableData>()
+                .on_update_relative({
+                    let app = app.clone();
+                    let pool = pool.clone();
+                    let update_weak_window = update_window.clone();
+                    move |id, relative, mother_name, father_name| {
+                        update_relative(
+                            id.to_string(),
+                            pool.clone(),
+                            relative,
+                            mother_name.to_string(),
+                            father_name.to_string(),
+                            app.clone(),
+                            update_weak_window.clone(),
+                        );
+                    }
+                });
+
+            update_window
+                .upgrade()
+                .unwrap()
+                .global::<TableData>()
+                .set_males(males.clone().into());
+            update_window
+                .upgrade()
+                .unwrap()
+                .global::<TableData>()
+                .set_females2(females2.clone().into());
+            update_window
+                .upgrade()
+                .unwrap()
+                .global::<TableData>()
+                .on_delete_relative({
+                    let weak_app = app.clone();
+                    let pool = pool.clone();
+                    let weak_update_window = update_window.clone();
+                    move |id| {
+                        println!("deleteding where id = {id}");
+                        let pool = pool.clone();
+                        let weak_app = weak_app.clone();
+                        let weak_update_window = weak_update_window.clone();
+                        let _ = slint::spawn_local({
+                            let pool = pool.clone();
+                            async move {
+                                let weak_app = weak_app.clone();
+                                let weak_update_window = weak_update_window.clone();
+                                let res = sqlx::query("DELETE FROM relative WHERE id=$1")
+                                    .bind(id.to_string())
+                                    .execute(&pool)
+                                    .await;
+
+                                match res {
+                                    Ok(_) => {
+                                        let _ = slint::spawn_local({
+                                            let pool = pool.clone();
+                                            let app = weak_app.clone();
+                                            async move {
+                                                let _ = update_global_data(pool, app).await;
+                                            }
+                                        });
+                                        println!("deleted where id is {}", id.to_string());
+                                        weak_update_window
+                                            .upgrade()
+                                            .unwrap()
+                                            .global::<CrudMessages>()
+                                            .set_delete_relative_success(SharedString::from(
+                                                "Deleted Successfully",
+                                            ));
+                                    }
+                                    Err(e) => {
+                                        println!("error deleting: {e}");
+                                        weak_update_window
+                                            .unwrap()
+                                            .global::<CrudMessages>()
+                                            .set_delete_relative_error(slint::format!(
+                                                "error deleting relative, {e}"
+                                            ));
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            update_window
+                .upgrade()
+                .unwrap()
+                .global::<TableData>()
+                .on_add_image_for_relative({
+                    let images_dir = images_dir.clone();
+                    let weak_update_window = Rc::new(update_window.clone());
+                    let pool = pool.clone();
+                    move |id| {
+                        let weak_update_window = Rc::clone(&weak_update_window);
+                        if id == "" {
+                            weak_update_window
+                                .unwrap()
+                                .global::<CrudMessages>()
+                                .set_upload_image_error(SharedString::from(
+                                    "No selected relative, click on one row.",
+                                ));
+                        } else {
+                            if let Some(path) = FileDialog::new()
+                                .set_location("~/Desktop")
+                                .add_filter("Image", &["jpg", "jpeg", "png"])
+                                .show_open_single_file()
+                                .unwrap()
+                            {
+                                let images_dir = images_dir.clone();
+                                let _ = slint::spawn_local({
+                                    let pool = pool.clone();
+                                    if let Ok(_) = fs::copy(
+                                        path.to_str().unwrap(),
+                                        std::format!(
+                                            "{images_dir}/{id}-{}",
+                                            path.file_name().unwrap().to_str().unwrap().to_string()
+                                        ),
+                                    ) {
+                                    } else {
+                                        weak_update_window
+                                            .unwrap()
+                                            .global::<CrudMessages>()
+                                            .set_upload_image_error(SharedString::from(
+                                                "Can't add image",
+                                            ));
+                                        println!("error adding photo");
+                                        return;
+                                    };
+                                    async move {
+                                        match sqlx::query(&sql::add_image_for_relative())
+                                            .bind(std::format!(
+                                                "{images_dir}/{id}-{}",
+                                                path.file_name()
+                                                    .unwrap()
+                                                    .to_str()
+                                                    .unwrap()
+                                                    .to_string()
+                                            ))
+                                            .bind(id.to_string())
+                                            .execute(&pool)
+                                            .await
+                                        {
+                                            Ok(_) => {
+                                                let mut filename = String::new();
+                                                if let Ok(f) = sqlx::query(
+                                                    r#"
+                                                SELECT filename 
+                                                FROM image 
+                                                WHERE relative_id = $1
+                                                ORDER BY created_at DESC
+                                                LIMIT 1;
+                                            "#,
+                                                )
+                                                .bind(id.clone().to_string())
+                                                .fetch_one(&pool)
+                                                .await
+                                                {
+                                                    filename = f
+                                                        .try_get("filename")
+                                                        .unwrap_or("".to_string());
+                                                }
+                                                println!("filename is: {filename}");
+                                                let image = slint::Image::load_from_path(
+                                                    std::path::Path::new(filename.as_str()),
+                                                );
+                                                match image {
+                                                    Ok(img) => {
+                                                        weak_update_window
+                                                            .upgrade()
+                                                            .unwrap()
+                                                            .global::<CrudMessages>()
+                                                            .set_upload_image_success(
+                                                                SharedString::from("Image Updated"),
+                                                            );
+                                                        weak_update_window
+                                                            .upgrade()
+                                                            .unwrap()
+                                                            .global::<TableData>()
+                                                            .set_active_profile_image(img);
+                                                    }
+                                                    Err(e) => {
+                                                        println!(
+                                                            "error loading emage: {}",
+                                                            e.to_string()
+                                                        );
+                                                        weak_update_window
+                                                            .upgrade()
+                                                            .unwrap()
+                                                            .global::<CrudMessages>()
+                                                            .set_upload_image_error(
+                                                                slint::format!(
+                                                                    "error loading image: {}",
+                                                                    e.to_string()
+                                                                ),
+                                                            );
+                                                    }
+                                                }
+                                            }
+                                            Err(e) => {
+                                                println!("error: {}", e.to_string());
+                                                weak_update_window
+                                                    .unwrap()
+                                                    .global::<CrudMessages>()
+                                                    .set_upload_image_error(SharedString::from(
+                                                        "Can't add image",
+                                                    ));
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
         }
     });
 
     app.global::<TableData>().on_show_add_window({
-        let update_weak_window = update_window.as_weak();
         let pool = pool.clone();
         let app = app.as_weak();
         move || {
             let _ = slint::spawn_local({
                 let pool = pool.clone();
-                let update_weak_window = update_weak_window.clone();
                 let app = app.clone();
                 async move {
                     let females = repo::get_female_relatives(&pool).await.unwrap();
@@ -126,7 +400,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let create_window = create_window.as_weak();
                     let pool = pool.clone();
                     let app = app.clone();
-                    let update_weak_window = update_weak_window.clone();
                     create_window
                         .unwrap()
                         .global::<TableData>()
@@ -134,7 +407,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             let weak_app = create_window.clone();
                             let pool = pool.clone();
                             let app = app.clone();
-                            let update_weak_window = update_weak_window.clone();
                             move |relative, mother_name, father_name| {
                                 println!("mothe_name {mother_name} father name {father_name}");
                                 create_relative(
@@ -143,7 +415,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     father_name.to_string(),
                                     mother_name.to_string(),
                                     weak_app.clone(),
-                                    update_weak_window.clone(),
                                     app.clone(),
                                 );
                             }
@@ -153,46 +424,84 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    update_window.global::<TableData>().on_update_relative({
-        let update_weak_window = update_window.as_weak();
-        let pool = pool.clone();
-        let app = app.as_weak();
-        let create_window = CreateWindow::new().unwrap();
-        let create_weak_window = create_window.as_weak();
-        move |id, relative, mother_name, father_name| {
-            update_relative(
-                id.to_string(),
-                pool.clone(),
-                relative,
-                mother_name.to_string(),
-                father_name.to_string(),
-                app.clone(),
-                update_weak_window.clone(),
-                create_weak_window.clone(),
-            );
-        }
-    });
-
     app.global::<TableData>().on_current_row_changed({
         let weak_app = app.as_weak();
-        let update_window = update_window.as_weak();
         let pool = pool.clone();
         move |row| {
             let active_tab = weak_app.unwrap().global::<TableData>().get_active_tab();
+            //weak_app
+            //    .unwrap()
+            //    .global::<TableData>()
+            //    .set_active_note(Not);
             if active_tab == ActiveTab::Relative {
                 let table_data = weak_app.unwrap().global::<TableData>().get_relative();
                 let table_data = table_data.row_data(row as usize).unwrap();
-                let update_window = update_window.clone();
                 if let Some(id) = table_data.row_data(0) {
                     let id = id.text;
                     let pool = pool.clone();
                     let weak_app = weak_app.clone();
-                    let update_window = update_window.clone();
 
                     let _ = slint::spawn_local(async move {
+                        let mut filename = String::new();
+                        if let Ok(f) = sqlx::query(
+                            r#"
+                                SELECT filename 
+                                FROM image 
+                                WHERE relative_id = $1
+                                ORDER BY created_at DESC
+                                LIMIT 1;
+                            "#,
+                        )
+                        .bind(id.clone().to_string())
+                        .fetch_one(&pool)
+                        .await
+                        {
+                            filename = f.try_get("filename").unwrap_or("".to_string());
+                        }
+                        println!("filename is: {filename}");
+                        let image =
+                            slint::Image::load_from_path(std::path::Path::new(filename.as_str()));
+                        match image {
+                            Ok(img) => {
+                                weak_app
+                                    .upgrade()
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_active_profile_image(img);
+                            }
+                            Err(e) => {
+                                println!("error loading emage: {}", e.to_string());
+                            }
+                        }
+
                         if let Ok(relative) = get_relative_data(&id, &pool).await {
                             let mut selected_mother_name = String::new();
                             let mut selected_father_name = String::new();
+
+                            let _ = slint::spawn_local({
+                                let pool = pool.clone();
+                                let relative = relative.clone();
+                                let weak_app = weak_app.clone();
+                                println!("id: {}", relative.id);
+                                async move {
+                                    if let Ok(notes) = repo::get_notes_rows_for_relative(
+                                        relative.id.to_string(),
+                                        &pool,
+                                    )
+                                    .await
+                                    {
+                                        println!("{}", "got notes");
+                                        weak_app
+                                            .unwrap()
+                                            .global::<TableData>()
+                                            .set_notes_rows_for_active_relative(
+                                                notes.clone().into(),
+                                            );
+                                        println!("{}", "set notes");
+                                    }
+                                }
+                            });
+
                             if let Ok(m_row) =
                                 sqlx::query("SELECT full_name FROM relative WHERE id = $1")
                                     .bind(relative.mother_id)
@@ -213,10 +522,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .unwrap()
                                 .global::<TableData>()
                                 .set_active_relative(relative.clone());
-                            update_window
-                                .unwrap()
-                                .global::<TableData>()
-                                .set_active_relative(relative.clone());
                             weak_app
                                 .unwrap()
                                 .global::<TableData>()
@@ -224,18 +529,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     selected_father_name.clone(),
                                 ));
                             weak_app
-                                .unwrap()
-                                .global::<TableData>()
-                                .set_selected_mother_name(SharedString::from(
-                                    selected_mother_name.clone(),
-                                ));
-                            update_window
-                                .unwrap()
-                                .global::<TableData>()
-                                .set_selected_father_name(SharedString::from(
-                                    selected_father_name.clone(),
-                                ));
-                            update_window
                                 .unwrap()
                                 .global::<TableData>()
                                 .set_selected_mother_name(SharedString::from(
@@ -252,79 +545,134 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    app.global::<TableData>().set_males(males.clone().into());
-    app.global::<TableData>()
-        .set_females2(females2.clone().into());
-    update_window
-        .global::<TableData>()
-        .set_males(males.clone().into());
-    update_window
-        .global::<TableData>()
-        .set_females2(females2.clone().into());
+    // NOTE SPECIFIC
+    app.global::<TableData>().on_current_note_row_change({
+        let weak_app = Rc::new(app.as_weak());
+        let pool = Rc::new(pool.clone());
+        move |row| {
+            let table_data = weak_app
+                .unwrap()
+                .global::<TableData>()
+                .get_notes_rows_for_active_relative();
+            let table_data = table_data.row_data(row as usize).unwrap();
 
-    app.global::<TableData>().on_add_image_for_relative({
-        let weak_app = app.as_weak();
-        let pool = pool.clone();
-        move |id| {
-            let weak_app = weak_app.unwrap().as_weak();
-            if id == "" {
-                weak_app
-                    .unwrap()
-                    .global::<TableData>()
-                    .set_files_error(SharedString::from(
-                        "No selected relative, click on one row.",
-                    ));
-            } else {
-                if let Some(path) = FileDialog::new()
-                    .set_location("~/Desktop")
-                    .add_filter("Image", &["jpg", "jpeg", "png"])
-                    .show_open_single_file()
-                    .unwrap()
-                {
-                    let images_dir = images_dir.clone();
-                    let _ = slint::spawn_local({
-                        let weak_app = weak_app.unwrap().as_weak();
-                        let pool = pool.clone();
-                        if let Ok(_) = fs::copy(
-                            path.to_str().unwrap(),
-                            std::format!(
-                                "{images_dir}/{id}-{}",
-                                path.file_name().unwrap().to_str().unwrap().to_string()
-                            ),
-                        ) {
-                        } else {
-                            weak_app
-                                .unwrap()
-                                .global::<TableData>()
-                                .set_image_error(SharedString::from("Can't add image"));
-                            println!("error adding photo");
-                            return;
+            if let Some(id) = table_data.row_data(0) {
+                println!("{}", id.text);
+                let _ = slint::spawn_local({
+                    let pool = Rc::clone(&pool);
+                    let weak_app = Rc::clone(&weak_app);
+                    async move {
+                        let note_row = sqlx::query(
+                            "SELECT text, id, pinned, relative_id  FROM  note WHERE id=$1",
+                        )
+                        .bind(id.text.to_string())
+                        .fetch_one(pool.deref())
+                        .await
+                        .unwrap();
+                        let text = note_row.try_get("text").unwrap_or(String::new());
+                        let id: i32 = note_row.get("id");
+                        let pinned: bool = note_row.get("pinned");
+                        let relative_id: i32 = note_row.get("relative_id");
+                        let note = Note {
+                            text: text.into(),
+                            id: slint::format!("{}", id),
+                            pinned,
+                            relative_id: slint::format!("{}", relative_id),
                         };
-                        async move {
-                            match sqlx::query(&sql::add_image_for_relative())
-                                .bind(std::format!(
-                                    "{images_dir}/{id}-{}",
-                                    path.file_name().unwrap().to_str().unwrap().to_string()
-                                ))
-                                .bind(id.to_string())
-                                .execute(&pool)
-                                .await
-                            {
-                                Ok(_) => {}
-                                Err(e) => {
-                                    println!("error: {}", e.to_string());
-                                    weak_app
-                                        .unwrap()
-                                        .global::<TableData>()
-                                        .set_image_error(SharedString::from("Can't add image"));
-                                }
-                            }
-                        }
-                    });
-                }
+                        weak_app
+                            .unwrap()
+                            .global::<TableData>()
+                            .set_active_note(note.into());
+                    }
+                });
             }
         }
     });
+
+    app.global::<TableData>().on_pin_active_note({
+        let weak_app = Rc::from(app.as_weak());
+        let pool = Rc::from(pool.clone());
+        move |id| {
+            println!("id to be pinned: {id}");
+            let _ = slint::spawn_local({
+                let weak_app = Rc::clone(&weak_app);
+                let pool = Rc::clone(&pool);
+                async move {
+                    let res = sqlx::query("UPDATE note SET pinned=1 WHERE id=$1")
+                        .bind(id.to_string())
+                        .execute(pool.deref())
+                        .await;
+                    match res {
+                        Ok(_) => {
+                            // reload noted
+                            let relative = weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .get_active_relative();
+                            if let Ok(notes) =
+                                repo::get_notes_rows_for_relative(relative.id.to_string(), &pool)
+                                    .await
+                            {
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_notes_rows_for_active_relative(notes.clone().into());
+                            }
+                            println!("pinned Successfully");
+                        }
+                        Err(e) => {
+                            println!("error: {}", e.to_string());
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    app.global::<TableData>().on_save_edited_note({
+        let pool = Rc::new(pool.clone());
+        let weak_app = Rc::new(app.as_weak());
+        move |id, new_note| {
+            println!("edited note: {id} {new_note}");
+            let pool = Rc::clone(&pool);
+            let weak_app = Rc::clone(&weak_app);
+            let _ = slint::spawn_local({
+                async move {
+                    let res = sqlx::query("UPDATE note SET text = $1 WHERE id = $2")
+                        .bind(new_note.to_string())
+                        .bind(id.to_string())
+                        .execute(pool.deref())
+                        .await;
+                    match res {
+                        Ok(_) => {
+                            // reload noted
+                            let relative = weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .get_active_relative();
+                            if let Ok(notes) =
+                                repo::get_notes_rows_for_relative(relative.id.to_string(), &pool)
+                                    .await
+                            {
+                                weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .set_notes_rows_for_active_relative(notes.clone().into());
+                            }
+                            println!("Saved");
+                        }
+                        Err(e) => {
+                            println!("error: {}", e.to_string());
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    app.global::<TableData>().set_males(males.clone().into());
+    app.global::<TableData>()
+        .set_females2(females2.clone().into());
 
     app.global::<TableData>().on_add_files_for_relative({
         let weak_app = app.as_weak();
@@ -490,59 +838,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    update_window.global::<TableData>().on_delete_relative({
-        let weak_app = app.as_weak();
-        let pool = pool.clone();
-        let weak_update_window = update_window.as_weak();
-        let create_window = CreateWindow::new().unwrap();
-        let weak_create_window = create_window.as_weak();
-        move |id| {
-            let pool = pool.clone();
-            let weak_app = weak_app.clone();
-            let weak_update_window = weak_update_window.clone();
-            let weak_create_window = weak_create_window.clone();
-            let _ = slint::spawn_local({
-                let pool = pool.clone();
-                async move {
-                    let weak_app = weak_app.clone();
-                    let weak_update_window = weak_update_window.clone();
-                    let weak_create_window = weak_create_window.clone();
-                    let res = sqlx::query("DELETE FROM relative WHERE id=$1")
-                        .bind(id.to_string())
-                        .execute(&pool)
-                        .await;
-
-                    match res {
-                        Ok(_) => {
-                            let _ = slint::spawn_local({
-                                let pool = pool.clone();
-                                let app = weak_app.clone();
-                                let weak_create_window = weak_create_window.clone();
-                                let weak_update_window = weak_update_window.clone();
-                                async move {
-                                    let _ = update_global_data(
-                                        pool,
-                                        app,
-                                        weak_create_window,
-                                        weak_update_window,
-                                    )
-                                    .await;
-                                }
-                            });
-                            println!("deleted where id is {}", id.to_string());
-                        }
-                        Err(e) => {
-                            weak_app
-                                .unwrap()
-                                .global::<TableData>()
-                                .set_error(slint::format!("error deleting relative, {e}"));
-                        }
-                    }
-                }
-            });
-        }
-    });
-
     app.run()?;
     Ok(())
 }
@@ -606,7 +901,6 @@ fn update_relative(
     father_name: String,
     app: slint::Weak<Main>,
     update_weak_window: slint::Weak<UpdateWindow>,
-    create_weak_window: slint::Weak<CreateWindow>,
 ) {
     let pool = pool.clone();
     let update_weak_window = update_weak_window.clone();
@@ -659,16 +953,8 @@ fn update_relative(
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = app.clone();
-                            let weak_create_window = create_weak_window.clone();
-                            let weak_update_window = update_weak_window.clone();
                             async move {
-                                let _ = update_global_data(
-                                    pool,
-                                    app,
-                                    weak_create_window,
-                                    weak_update_window,
-                                )
-                                .await;
+                                let _ = update_global_data(pool, app).await;
                             }
                         });
                         weak_update_window
@@ -708,16 +994,8 @@ fn update_relative(
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = app.clone();
-                            let weak_create_window = create_weak_window.clone();
-                            let weak_update_window = update_weak_window.clone();
                             async move {
-                                let _ = update_global_data(
-                                    pool,
-                                    app,
-                                    weak_create_window,
-                                    weak_update_window,
-                                )
-                                .await;
+                                let _ = update_global_data(pool, app).await;
                             }
                         });
                         weak_update_window
@@ -757,16 +1035,8 @@ fn update_relative(
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = app.clone();
-                            let weak_create_window = create_weak_window.clone();
-                            let weak_update_window = update_weak_window.clone();
                             async move {
-                                let _ = update_global_data(
-                                    pool,
-                                    app,
-                                    weak_create_window,
-                                    weak_update_window,
-                                )
-                                .await;
+                                let _ = update_global_data(pool, app).await;
                             }
                         });
                         weak_update_window
@@ -805,16 +1075,8 @@ fn update_relative(
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = app.clone();
-                            let weak_create_window = create_weak_window.clone();
-                            let weak_update_window = update_weak_window.clone();
                             async move {
-                                let _ = update_global_data(
-                                    pool,
-                                    app,
-                                    weak_create_window,
-                                    weak_update_window,
-                                )
-                                .await;
+                                let _ = update_global_data(pool, app).await;
                             }
                         });
                         weak_update_window
@@ -844,7 +1106,6 @@ fn create_relative(
     selected_father_name: String,
     selected_mother_name: String,
     weak_create_window: slint::Weak<CreateWindow>,
-    weak_update_window: slint::Weak<UpdateWindow>,
     app: slint::Weak<Main>,
 ) {
     let pool = pool.clone();
@@ -898,16 +1159,8 @@ fn create_relative(
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = app.clone();
-                            let weak_create_window = weak_create_window.clone();
-                            let weak_update_window = weak_update_window.clone();
                             async move {
-                                let _ = update_global_data(
-                                    pool,
-                                    app,
-                                    weak_create_window,
-                                    weak_update_window,
-                                )
-                                .await;
+                                let _ = update_global_data(pool, app).await;
                             }
                         });
                         println!("created Successfully");
@@ -952,16 +1205,8 @@ fn create_relative(
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = app.clone();
-                            let weak_create_window = weak_create_window.clone();
-                            let weak_update_window = weak_update_window.clone();
                             async move {
-                                let _ = update_global_data(
-                                    pool,
-                                    app,
-                                    weak_create_window,
-                                    weak_update_window,
-                                )
-                                .await;
+                                let _ = update_global_data(pool, app).await;
                             }
                         });
                         weak_create_window
@@ -1004,16 +1249,8 @@ fn create_relative(
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = app.clone();
-                            let weak_create_window = weak_create_window.clone();
-                            let weak_update_window = weak_update_window.clone();
                             async move {
-                                let _ = update_global_data(
-                                    pool,
-                                    app,
-                                    weak_create_window,
-                                    weak_update_window,
-                                )
-                                .await;
+                                let _ = update_global_data(pool, app).await;
                             }
                         });
                         weak_create_window
@@ -1055,16 +1292,8 @@ fn create_relative(
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = app.clone();
-                            let weak_create_window = weak_create_window.clone();
-                            let weak_update_window = weak_update_window.clone();
                             async move {
-                                let _ = update_global_data(
-                                    pool,
-                                    app,
-                                    weak_create_window,
-                                    weak_update_window,
-                                )
-                                .await;
+                                let _ = update_global_data(pool, app).await;
                             }
                         });
                         weak_create_window
@@ -1091,30 +1320,12 @@ fn create_relative(
 async fn update_global_data(
     pool: SqlitePool,
     app: slint::Weak<Main>,
-    _: slint::Weak<CreateWindow>,
-    update_window: slint::Weak<UpdateWindow>,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let females = repo::get_female_relatives(&pool).await?;
     let relatives = repo::get_all_relative(&pool).await?;
     let employees = repo::get_all_employees(&pool).await?;
     let males = repo::get_male_relatives(&pool).await?;
     let females2 = repo::get_mothers(&pool).await?;
-    update_window
-        .unwrap()
-        .global::<TableData>()
-        .set_females(females.clone().into());
-    update_window
-        .unwrap()
-        .global::<TableData>()
-        .set_relative(relatives.clone().into());
-    update_window
-        .unwrap()
-        .global::<TableData>()
-        .set_females2(females2.clone().into());
-    update_window
-        .unwrap()
-        .global::<TableData>()
-        .set_males(males.clone().into());
     app.unwrap()
         .global::<TableData>()
         .set_females(females.clone().into());

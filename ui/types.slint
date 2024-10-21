@@ -22,7 +22,7 @@ export struct Relative {
 export struct Note {
   id: string,
   relative_id: string,
-  pinned: string,
+  pinned: bool,
   text: string,
 }
 
@@ -54,6 +54,15 @@ export global TableData {
     in-out property <ActiveTab> active-tab;
     callback current-row-changed(int);
     in-out property <Relative> active-relative;
+    in-out property <image> active-profile-image;
+    callback add-image-for-relative(string);
+    in-out property <[[StandardListViewItem]]> notes-rows-for-active-relative;
+    in-out property <Note> active-note;
+    in-out property <bool> has-active-note;
+    in-out property <int> current-notes-row;
+    callback pin-active-note(string);
+    callback save-edited-note(string, string); // first string is id second it the note to save.
+    callback current-note-row-change(int);
     in-out property <Relative> new-relative;
     in-out property <string> active-relative-image;
     callback create-new-relative(Relative, string, string); // first string is mother name, second is father name
@@ -65,7 +74,6 @@ export global TableData {
     in-out property <string> files_error;
     in-out property <string> notes-error;
     callback add-files-for-relative(int, string);
-    callback add-image-for-relative(string);
     callback add-note-for-relative(string, string); // first parameter is id. second in the actual note text
     in-out property <[string]> selected-relative-files;
     in-out property <[string]> selected-relative-notes;
@@ -75,4 +83,13 @@ export global TableData {
     in-out property <string> create-error;
     in-out property <string> update-success;
     in-out property <string> update-eror;
+}
+
+export global CrudMessages {
+    in-out property <string> upload-image-error;
+    in-out property <string> upload-image-success;
+    in-out property <string> edit-note-error;
+    in-out property <string> pin-note-error;
+    in-out property <string> delete-relative-error;
+    in-out property <string> delete-relative-success;
 }

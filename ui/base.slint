@@ -3,11 +3,11 @@ import {  AddView } from "views/add-view.slint";
 import { UpdateView } from "views/update-view.slint";
 import { TabsView } from "views/tabs-view.slint";
 import { Palette, Button } from "std-widgets.slint";
-import { TableData} from "types.slint";
+import { TableData, CrudMessages } from "types.slint";
 import { Switch, TextEdit, HorizontalBox } from "std-widgets.slint";
 import { TaskBar } from "components/TaskBar.slint";
 
-export { TableData }
+export { TableData , CrudMessages }
 
 component Header inherits Rectangle {
     in-out property <bool> dark-mode;
@@ -33,8 +33,8 @@ component Header inherits Rectangle {
 }
 
 export component Main inherits Window {
-    min-width: 720px;
-    min-height: 480px;
+    min-width: 1280px;
+    min-height: 720px;
     title: "Genealogy App";
     note-pop-up := PopupWindow {
         width: root.width * 40%;
@@ -48,7 +48,6 @@ export component Main inherits Window {
             border-radius: 10px;
             border-color: black;
             border-width: 3px;
-            background: red;
             VerticalLayout {
                 TaskBar {
                     h: 50px;
@@ -61,8 +60,11 @@ export component Main inherits Window {
                         font-weight: 300;
                     }
 
-                    Button {
-                        text: "close";
+                    CustomButton {
+                        title: "close";
+                        background: orchid;
+                        height: 30px;
+                        width: 80px;
                         clicked => {
                             note-pop-up.close()
                         }
@@ -72,14 +74,18 @@ export component Main inherits Window {
                 VerticalLayout {
                     note := TextEdit {
                         height: 200px;
-                        text: "Lorem Ipsum";
                         placeholder-text: "Type note here";
                     }
 
-                    Button {
-                        text: "Save";
-                        clicked => {
-                            TableData.add-note-for-relative(TableData.active-relative.id, note.text);
+                    HorizontalBox {
+                        alignment: center;
+                        CustomButton {
+                            text-color: black;
+                            title: "Save";
+                            background: #dae8fc;
+                            clicked => {
+                                TableData.add-note-for-relative(TableData.active-relative.id, note.text);
+                            }
                         }
                     }
                 }
@@ -94,8 +100,21 @@ export component Main inherits Window {
                 HorizontalLayout {
                     spacing: 10px;
                     alignment: end;
+                    if TableData.has_selected_row: TaskBar {
+                        alignment: LayoutAlignment.end;
+                        h: 20px;
+                        Button {
+                            text: "Edit Relative";
+                            height: 40px;
+                            width: 140px;
+                            clicked => {
+                                TableData.show-update-window();
+                            }
+                        }
+                    }
+
                     Button {
-                        text: "Add New";
+                        text: "Add Relative";
                         height: 36px;
                         clicked => {
                             TableData.show-add-window()
@@ -127,8 +146,8 @@ export component Main inherits Window {
 }
 
 export component UpdateWindow inherits Window {
-    min-width: 720px;
-    min-height: 480px;
+    min-width: 1280px;
+    min-height: 720px;
     HorizontalLayout {
 
         VerticalLayout {
@@ -151,8 +170,8 @@ export component UpdateWindow inherits Window {
 }
 
 export component CreateWindow inherits Window {
-    min-width: 650px;
-    min-height: 430px;
+    min-width: 1280px;
+    min-height: 720px;
     HorizontalLayout {
 
         VerticalLayout {
