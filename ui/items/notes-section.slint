@@ -32,7 +32,6 @@ component TableHeader inherits Rectangle {
 }
 
 export component NotesSect inherits Rectangle {
-    property <string> active_note: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua...";
     background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #eceff4;
     border-radius: 10px;
     callback open-note-popup();
@@ -44,27 +43,46 @@ export component NotesSect inherits Rectangle {
         VerticalLayout {
             Rectangle {
                 width: 50%;
-                TabWidget {
+                tw := TabWidget {
+
+                    Tab {
+                        title: @tr("Notes");
+                        VerticalLayout {
+                            spacing: 10px;
+                            HorizontalLayout {
+                                spacing: 10px;
+                            }
+
+                            if TableData.notes-error != "": TableHeader {
+                                column2: TableData.notes-error;
+                            }
+                            Rectangle {
+                                border-color: #12d;
+                                border-radius: 2px;
+                                border-width: 2px;
+                                padding: 40px;
+
+                                StandardTableView {
+                                    width: 100%;
+                                    height: 100%;
+                                    columns: [{ title: "id" }, { title: "text" }, { title: "pinned" }, { title: "updated at" }];
+                                    current-row-changed() => {
+                                        TableData.current-notes-row = self.current-row;
+                                        TableData.has-active-note = true;
+                                        TableData.current-note-row-change(TableData.current-notes-row);
+                                    }
+
+                                    rows: TableData.notes-rows-for-active-relative;
+                                }
+                            }
+                        }
+                    }
+
                     Tab {
                         title: "Files";
                         VerticalLayout {
                             spacing: 10px;
                             padding: 10px;
-
-                            HorizontalLayout {
-                                spacing: 10px;
-                                CustomButton {
-                                    visible: TableData.active-relative.id != "";
-                                    title: "Add Files";
-                                    height: 40px;
-                                    width: 120px;
-                                    background-color: #12d;
-                                    clicked => {
-                                        TableData.add-files-for-relative(TableData.current_row, TableData.active-relative.id);
-                                    }
-                                }
-                            }
-
                             if TableData.files_error != "": TableHeader {
                                 column2: TableData.files_error;
                             }
@@ -97,56 +115,12 @@ export component NotesSect inherits Rectangle {
                             }
                         }
                     }
-
-                    Tab {
-                        title: "Notes";
-                        VerticalLayout {
-                            spacing: 10px;
-
-                            HorizontalLayout {
-                                spacing: 10px;
-                                /*CustomButton {
-                                    visible: TableData.active-relative.id != "";
-                                    height: 40px;
-                                    width: 120px;
-                                    title: "Add Note";
-                                    background: #12d;
-                                    clicked => {
-                                        open-note-popup()
-                                    }
-                                }*/
-                            }
-
-                            if TableData.notes-error != "": TableHeader {
-                                column2: TableData.notes-error;
-                            }
-                            Rectangle {
-                                border-color: #12d;
-                                border-radius: 2px;
-                                border-width: 2px;
-                                padding: 40px;
-
-                                StandardTableView {
-                                    width: 100%;
-                                    height: 100%;
-                                    columns: [{ title: "id" }, { title: "text" }, { title: "pinned" }, { title: "updated at" }];
-                                    current-row-changed() => {
-                                        TableData.current-notes-row = self.current-row;
-                                        TableData.has-active-note = true;
-                                        note-container.show-input = true;
-                                        TableData.current-note-row-change(TableData.current-notes-row);
-                                    }
-
-                                    rows: TableData.notes-rows-for-active-relative;
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
 
-        VerticalLayout {
+      // notes
+        if tw.current-index == 0: VerticalLayout {
             note-container := Rectangle {
                 in-out property <string> text;
                 in-out property <bool> show-input;
@@ -179,7 +153,7 @@ export component NotesSect inherits Rectangle {
                 }
             }
 
-            HorizontalBox {
+            if tw.current-index == 0:HorizontalBox {
                 alignment: center;
                 CustomButton {
                     title: "Add Note";
@@ -214,6 +188,40 @@ export component NotesSect inherits Rectangle {
                         TableData.save-edited-note(TableData.active-note.id, note-container.text);
                         note-container.text = TableData.active-note.text;
                     }
+                }
+            }
+        }
+
+        // files
+        if tw.current-index == 1: VerticalLayout {
+            HorizontalBox {
+                alignment: center;
+
+                CustomButton {
+                    title: "Add File";
+                    height: 40px;
+                    width: 120px;
+                    text-color: black;
+                    background: #dae8fc;
+                    clicked => {
+                        TableData.add-files-for-relative(TableData.current_row, TableData.active-relative.id);
+                    }
+                }
+
+                CustomButton {
+                    height: 40px;
+                    width: 120px;
+                    title: "Pin File";
+                    text-color: black;
+                    background: #dae811;
+                }
+
+                CustomButton {
+                    height: 40px;
+                    width: 120px;
+                    title: "Delete File";
+                    text-color: red;
+                    background: #000099;
                 }
             }
         }

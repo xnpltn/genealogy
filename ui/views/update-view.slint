@@ -9,433 +9,534 @@ export component UpdateView inherits Rectangle {
     in-out property <Relative> og;
     in-out property <string> title;
     border-radius: 10px;
+    message := PopupWindow {
+        height: 250px;
+        width: 400px;
+        close-on-click: false;
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
 
-    VerticalLayout {
-        spacing: 10px;
-        padding: 10px;
-        message := PopupWindow {
-            height: 160px;
-            width: 320px;
-            close-on-click: false;
-            x: (root.width - self.width) / 2;
-            y: (root.height - self.height) / 2;
+        Rectangle {
+            width: parent.width;
+            height: parent.height;
+            background: #ffffff;
+            border-radius: 12px;
+            drop-shadow-color: #00000020;
+            drop-shadow-offset-x: 0px;
+            drop-shadow-offset-y: 4px;
+            drop-shadow-blur: 16px;
 
-            Rectangle {
-                width: parent.width;
-                height: parent.height;
-                background: #ffffff;
-                border-radius: 12px;
-                drop-shadow-color: #00000020;
-                drop-shadow-offset-x: 0px;
-                drop-shadow-offset-y: 4px;
-                drop-shadow-blur: 16px;
+            VerticalLayout {
+                padding: 24px;
+                spacing: 20px;
 
-                VerticalLayout {
-                    padding: 24px;
-                    spacing: 20px;
+                Rectangle {
+                    height: 40px;
+                    width: 40px;
+                    border-radius: 10px;
+                    background: TableData.update-success != "" ? #E7F7EE : #FEE4E2;
 
-                    Rectangle {
-                        height: 160px;
-                        width: 320px;
-                        border-radius: 24px;
-                        background: TableData.update-success != "" ? #E7F7EE : #FEE4E2;
-
-                        Image {
-                            source: TableData.update-success != "" ? @image-url("../../assets/icons/check-circle.svg") : @image-url("../../assets/icons/x-circle.svg");
-                            width: 24px;
-                            height: 24px;
-                            x: (parent.width - self.width) / 2;
-                            y: (parent.height - self.height) / 2;
-                            colorize: TableData.update-success != "" ? #039855 : #D92D20;
-                        }
+                    Image {
+                        source: TableData.update-success != "" ? @image-url("../../assets/icons/check-circle.svg") : @image-url("../../assets/icons/x-circle.svg");
+                        width: 100%;
+                        height: 100%;
+                        x: (parent.width - self.width) / 2;
+                        y: (parent.height - self.height) / 2;
+                        colorize: TableData.update-success != "" ? #039855 : #D92D20;
                     }
+                }
 
-                    Text {
-                        horizontal-alignment: center;
-                        text: TableData.update-success != "" ? TableData.update-success : TableData.update-eror;
-                        font-size: 16px;
-                        wrap: TextWrap.word-wrap;
-                        font-weight: 500;
-                        color: #101828;
-                    }
+                Text {
+                    horizontal-alignment: center;
+                    text: TableData.update-success != "" ? TableData.update-success : TableData.update-eror;
+                    font-size: 16px;
+                    wrap: TextWrap.word-wrap;
+                    font-weight: 500;
+                    color: #101828;
+                }
 
-                    HorizontalLayout {
-                        alignment: center;
-                        padding-top: 8px;
+                HorizontalLayout {
+                    alignment: center;
+                    padding-top: 8px;
 
-                        CustomButton {
-                            width: 80px;
-                            height: 30px;
-                            background: TableData.update-success != "" ? #039855 : #D92D20;
-                            border-radius: 8px;
-                            title: "close";
-                            text-color: white;
+                    CustomButton {
+                        width: 140px;
+                        height: 40px;
+                        background: TableData.update-success != "" ? #039855 : #D92D20;
+                        border-radius: 8px;
+                        title: "close";
+                        text-color: white;
 
-                            clicked => {
-                                TableData.selected-mother-name = "";
-                                TableData.selected-father-name = "";
-                                message.close()
-                            }
+                        clicked => {
+                            TableData.selected-mother-name = "";
+                            TableData.selected-father-name = "";
+                            message.close()
                         }
                     }
                 }
             }
         }
+    }
 
-        image-message-popup := MessagePopup {
-            message-on-error: CrudMessages.upload-image-error;
-            message-on-success: CrudMessages.upload-image-success;
-            x-pos: (root.width - self.width) / 2;
-            y-pos: (root.height - self.height) / 2;
-        }
+    image-message-popup := MessagePopup {
+        message-on-error: CrudMessages.upload-image-error;
+        message-on-success: CrudMessages.upload-image-success;
+        x-pos: (root.width - self.width) / 2;
+        y-pos: (root.height - self.height) / 2;
+    }
 
-        delete-relative-pupup := MessagePopup {
-            message-on-error: CrudMessages.delete-relative-error;
-            message-on-success: CrudMessages.delete-relative-success;
-            x-pos: (root.width - self.width) / 2;
-            y-pos: (root.height - self.height) / 2;
-        }
+    delete-relative-pupup := MessagePopup {
+        message-on-error: CrudMessages.delete-relative-error;
+        message-on-success: CrudMessages.delete-relative-success;
+        x-pos: (root.width - self.width) / 2;
+        y-pos: (root.height - self.height) / 2;
+    }
 
-        delete-prompt := PopupWindow {
-            x: (root.width - self.width) / 2;
-            y: (root.height - self.height) / 2;
-            close-on-click: false;
-            height: 200px;
-            width: 400px;
-            Rectangle {
-                height: parent.height;
-                width: parent.width;
-                background: #ffffff;
-                border-radius: 12px;
-                drop-shadow-color: #00000020;
-                drop-shadow-offset-x: 0px;
-                drop-shadow-offset-y: 4px;
-                drop-shadow-blur: 16px;
-                HorizontalBox {
-                    alignment: center;
+    delete-prompt := PopupWindow {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        close-on-click: false;
+        height: 250px;
+        width: 400px;
+        Rectangle {
+            height: parent.height;
+            width: parent.width;
+            background: #ffffff;
+            border-radius: 8px;
+            drop-shadow-color: #00000029;
+            drop-shadow-offset-x: 0px;
+            drop-shadow-offset-y: 4px;
+            drop-shadow-blur: 24px;
+            VerticalLayout {
+                padding: 20px;
+                spacing: 24px;
+                alignment: space-between;
+                Text {
+                    text: @tr("Confirm Delete");
+                    font-size: 18px;
+                    font-weight: 500;
+                    horizontal-alignment: center;
+                    color: #111827;
+                }
+
+                HorizontalLayout {
+                    spacing: 12px;
+                    alignment: end;
                     CustomButton {
+                        width: 100px;
+                        height: 36px;
+                        title: "Cancel";
+                        background: #f3f4f6;
+                        text-color: #374151;
+                        border-radius: 6px;
+                        clicked => {
+                            delete-prompt.close();
+                        }
+                    }
+
+                    CustomButton {
+                        width: 100px;
+                        height: 36px;
                         title: "Delete";
-                        background: red;
-                        text-color: white;
+                        background: #ef4444;
+                        text-color: #ffffff;
+                        border-radius: 6px;
                         clicked => {
                             TableData.delete-relative(TableData.active-relative.id);
                             delete-relative-pupup.show()
                         }
                     }
+                }
+            }
+        }
+    }
 
-                    CustomButton {
-                        title: "Cancel";
-                        background: green;
-                        text-color: black;
-                        clicked => {
-                            delete-prompt.close();
+    VerticalLayout {
+        in-out property <bool> pinned: TableData.active-relative.pinned;
+        in-out property <float> swarthy;
+        in-out property <float> crazy;
+        in-out property <float> hotness;
+        in-out property <float> employable;
+        spacing: 16px;
+        padding: 24px;
+
+        HorizontalLayout {
+            spacing: 24px;
+            VerticalLayout {
+                height: 100%;
+                width: 66%;
+                spacing: 20px;
+                Rectangle {
+                    height: 100%;
+                    background: Palette.color-scheme == ColorScheme.dark ? #24283b : #f8f9fc;
+                    border-radius: 12px;
+                    drop-shadow-color: Palette.color-scheme == ColorScheme.dark ? #00000040 : #0000001a;
+                    drop-shadow-offset-x: 0px;
+                    drop-shadow-offset-y: 4px;
+                    drop-shadow-blur: 12px;
+
+                    VerticalLayout {
+                        GroupBox {
+                            padding: 24px;
+                            VerticalLayout {
+                                spacing: 16px;
+
+                                HorizontalBox {
+                                    spacing: 16px;
+                                    VerticalLayout {
+                                        Text {
+                                            text: "First Name";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        first-name := LineEdit {
+                                            height: 40px;
+                                            placeholder-text: "First Name";
+                                            text: TableData.active-relative.first-name;
+                                        }
+                                    }
+
+                                    VerticalLayout {
+                                        Text {
+                                            text: "Middle Name";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        middle-name := LineEdit {
+                                            height: 40px;
+                                            placeholder-text: "Middle Name";
+                                            text: TableData.active-relative.middle-name;
+                                        }
+                                    }
+
+                                    VerticalLayout {
+                                        Text {
+                                            text: "Last Name";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        last-name := LineEdit {
+                                            height: 40px;
+                                            placeholder-text: "Last Name";
+                                            text: TableData.active-relative.last-name;
+                                        }
+                                    }
+                                }
+
+                                HorizontalBox {
+
+                                    spacing: 16px;
+                                    VerticalLayout {
+                                        Text {
+                                            text: "First Name";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        email := LineEdit {
+                                            height: 40px;
+                                            placeholder-text: "Email";
+                                            text: TableData.active-relative.email;
+                                        }
+                                    }
+
+                                    VerticalLayout {
+                                        Text {
+                                            text: "Lost Reason";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        lost := LineEdit {
+                                            height: 40px;
+                                            placeholder-text: "Lost Reason";
+                                            text: TableData.active-relative.lost-reason;
+                                        }
+                                    }
+
+                                    VerticalLayout {
+                                        Text {
+                                            text: "Sameness";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        sameness := LineEdit {
+                                            height: 40px;
+                                            placeholder-text: "Sameness ";
+                                            text: TableData.active-relative.sameness;
+                                        }
+                                    }
+                                }
+
+                                HorizontalBox {
+                                    spacing: 16px;
+                                    VerticalLayout {
+                                        Text {
+                                            text: "Sex";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        sex := ComboBox {
+                                            width: 25%;
+                                            model: ["male", "female"];
+                                            current-value: TableData.active-relative.sex;
+                                            height: 40px;
+                                        }
+                                    }
+
+                                    VerticalLayout {
+                                        Text {
+                                            text: "Birthday";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        birthday := LineEdit {
+                                            placeholder-text: "YYYY-MM-DD";
+                                            text: TableData.active-relative.birthday;
+                                            width: 25%;
+                                            height: 40px;
+                                        }
+                                    }
+
+                                    VerticalLayout {
+                                        Text {
+                                            text: "Phone";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        phone := LineEdit {
+                                            placeholder-text: "Phone";
+                                            text: TableData.active-relative.phone;
+                                            width: 25%;
+                                            height: 40px;
+                                        }
+                                    }
+                                }
+
+                                HorizontalBox {
+                                    spacing: 16px;
+                                    alignment: center;
+                                    if sex.current-value == "male": VerticalLayout {
+                                        Text {
+                                            text: @tr("Employable | {}", e.value);
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        e := Slider {
+                                            minimum: 0;
+                                            maximum: 10;
+                                            width: 15%;
+                                            height: 40px;
+                                            value: TableData.active-relative.employable;
+                                            changed(val) => {
+                                                employable = val;
+                                            }
+                                        }
+                                    }
+
+                                    if sex.current-value == "female": VerticalLayout {
+                                        Text {
+                                            text: @tr("Hotness | {}", h.value);
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        h := Slider {
+                                            minimum: 0;
+                                            maximum: 10;
+                                            width: 15%;
+                                            height: 40px;
+                                            value: TableData.active-relative.hotness;
+                                            enabled: sex.current-value == sex.model[1];
+                                            changed(val) => {
+                                                hotness = val;
+                                            }
+                                        }
+                                    }
+
+                                    if sex.current-value == "female": VerticalLayout {
+                                        Text {
+                                            text: @tr("Swarthy | {}", s.value);
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        s := Slider {
+                                            minimum: 0;
+                                            maximum: 10;
+                                            width: 15%;
+                                            height: 40px;
+                                            value: TableData.active-relative.swarthy;
+                                            enabled: sex.current-value == sex.model[1];
+                                            changed(val) => {
+                                                swarthy = val;
+                                            }
+                                        }
+                                    }
+
+                                    if sex.current-value == "female":VerticalLayout {
+                                        Text {
+                                            text: @tr("Crazy | {}", c.value);
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        c := Slider {
+                                            minimum: 0;
+                                            maximum: 10;
+                                            width: 25%;
+                                            height: 40px;
+                                            value: TableData.active-relative.crazy;
+                                            enabled: sex.current-value == sex.model[1];
+                                            changed(val) => {
+                                                crazy = val;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                HorizontalBox {
+                                    spacing: 16px;
+                                    alignment: space-around;
+                                    VerticalLayout {
+                                        Text {
+                                            text: TableData.selected-mother-name != "" ? @tr("Update Mother | current {}", TableData.selected-mother-name) : "Choose Mother";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        mother := ComboBox {
+                                            model: TableData.females2;
+                                            height: 40px;
+                                        }
+                                    }
+
+                                    VerticalLayout {
+                                        Text {
+                                            text: TableData.selected-father-name != "" ? @tr("Update Father | current {}", TableData.selected-father-name) : "Choose Father";
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-weight: 500;
+                                        }
+
+                                        father := ComboBox {
+                                            model: TableData.males;
+                                            height: 40px;
+                                        }
+                                    }
+                                }
+
+                                HorizontalLayout {
+                                    alignment: space-around;
+                                    CustomButton {
+                                        height: 40px;
+                                        width: 140px;
+                                        background: Palette.color-scheme == ColorScheme.dark ? (pinned ? #bb9af7 : #7aa2f7) : (pinned ? #9d7cd8 : #3d59a1);
+                                        title: pinned ? "UnPin" : "Pin";
+                                        clicked => {
+                                            pinned = !pinned;
+                                        }
+                                    }
+
+                                    CustomButton {
+                                        height: 40px;
+                                        width: 120px;
+                                        title: "Save";
+                                        background: #22c55e;
+                                        text-color: white;
+                                        border-radius: 6px;
+                                        clicked => {
+                                            relative = {
+                                                first-name: first-name.text,
+                                                middle-name: middle-name.text,
+                                                last-name: last-name.text,
+                                                sex: sex.current-value,
+                                                phone: phone.text,
+                                                email: email.text,
+                                                birthday: birthday.text,
+                                                lost-reason: lost.text,
+                                                sameness: sameness.text,
+                                                pinned: pinned,
+                                                hotness: hotness,
+                                                employable: employable,
+                                                crazy: crazy,
+                                                swarthy: swarthy,
+                                                mother-id: TableData.active-relative.mother-id,
+                                                father-id: TableData.active-relative.father-id,
+                                            };
+                                            TableData.update-relative(TableData.active-relative.id, relative, mother.current-value, father.current-value);
+                                            message.show();
+                                        }
+                                    }
+
+                                    CustomButton {
+                                        height: 40px;
+                                        width: 120px;
+                                        title: @tr("Delete");
+                                        background: #ef4444;
+                                        border-radius: 6px;
+                                        clicked => {
+                                            delete-prompt.show()
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
 
-        ScrollView {
             VerticalLayout {
-                spacing: 15px;
-                HorizontalBox {
-                    width: 100%;
-                    spacing: 20px;
-                    VerticalLayout {
-                        alignment: center;
-                        Rectangle {
-                            height: 100px;
-                            width: 100px;
-                            border-radius: 5px;
-                            background: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
-                            Image {
-                                source: TableData.active-profile-image;
-                                height: 100px;
-                                width: 100px;
-                            }
-                        }
-                    }
-
-                    VerticalLayout {
-                        alignment: center;
-                        CustomButton {
-                            title: "Upload new";
-                            height: 40px;
-                            width: 120px;
-                            background: blue;
-                            clicked => {
-                                TableData.add-image-for-relative(TableData.active-relative.id);
-                                image-message-popup.show()
-                            }
-                        }
+                width: 33%;
+                spacing: 20px;
+                height: 100%;
+                Rectangle {
+                    height: 300px;
+                    width: 300px;
+                    border-radius: 12px;
+                    background: Palette.color-scheme == ColorScheme.dark ? #414868 : #e2e8f0;
+                    drop-shadow-color: Palette.color-scheme == ColorScheme.dark ? #00000040 : #0000001a;
+                    drop-shadow-offset-x: 0px;
+                    drop-shadow-offset-y: 4px;
+                    drop-shadow-blur: 12px;
+                    Image {
+                        source: TableData.active-profile-image;
+                        height: 300px;
+                        width: 300px;
                     }
                 }
 
-                GroupBox {
-                    VerticalLayout {
-                        spacing: 10px;
-                        HorizontalBox {
-                            spacing: 10px;
-                            VerticalLayout {
-                                Text {
-                                    text: "First Name";
-                                }
-
-                                first-name := LineEdit {
-                                    placeholder-text: "First Name";
-                                    text: TableData.active-relative.first-name;
-                                }
-                            }
-
-                            VerticalLayout {
-                                Text {
-                                    text: "Middle Name";
-                                }
-
-                                middle-name := LineEdit {
-                                    placeholder-text: "Middle Name";
-                                    text: TableData.active-relative.middle-name;
-                                }
-                            }
-
-                            VerticalLayout {
-                                Text {
-                                    text: "Last Name";
-                                }
-
-                                last-name := LineEdit {
-                                    placeholder-text: "Last Name";
-                                    text: TableData.active-relative.last-name;
-                                }
-                            }
-                        }
-
-                        HorizontalBox {
-                            spacing: 10px;
-                            VerticalLayout {
-                                Text {
-                                    text: "Sex";
-                                }
-
-                                sex := ComboBox {
-                                    width: 25%;
-                                    model: ["male", "female"];
-                                    current-value: TableData.active-relative.sex;
-                                }
-                            }
-
-                            VerticalLayout {
-                                Text {
-                                    text: "Birthday";
-                                }
-
-                                birthday := LineEdit {
-                                    placeholder-text: "Birthday (YYYY-MM-DD)";
-                                    text: TableData.active-relative.birthday;
-                                    width: 25%;
-                                }
-                            }
-
-                            VerticalLayout {
-                                Text {
-                                    text: "Phone";
-                                }
-
-                                phone := LineEdit {
-                                    placeholder-text: "Phone";
-                                    text: TableData.active-relative.phone;
-                                    width: 25%;
-                                }
-                            }
-                        }
-
-                        HorizontalBox {
-                            spacing: 10px;
-                            VerticalLayout {
-                                Text {
-                                    text: "Email";
-                                }
-
-                                email := LineEdit {
-                                    placeholder-text: "Email";
-                                    text: TableData.active-relative.email;
-                                    width: 40%;
-                                }
-                            }
-
-                            VerticalLayout {
-                                Text {
-                                    text: "ATNum";
-                                }
-
-                                LineEdit {
-                                    placeholder-text: "ATNum";
-                                    width: 25%;
-                                }
-                            }
-
-                            VerticalLayout {
-                                Text {
-                                    text: "Sameness";
-                                }
-
-                                sameness := LineEdit {
-                                    placeholder-text: "Sameness";
-                                    text: TableData.active-relative.sameness;
-                                    width: 25%;
-                                }
-                            }
-                        }
-
-                        HorizontalBox {
-                            spacing: 10px;
-                            VerticalLayout {
-                                Text {
-                                    text: @tr("Employable | {}", employable.value);
-                                }
-
-                                employable := Slider {
-                                    minimum: 0;
-                                    maximum: 10;
-                                    width: 25%;
-                                    value: TableData.active-relative.employable;
-                                }
-                            }
-
-                            VerticalLayout {
-                                Text {
-                                    text: @tr("Hotness | {}", hotness.value);
-                                }
-
-                                hotness := Slider {
-                                    minimum: 0;
-                                    maximum: 10;
-                                    width: 25%;
-                                    value: TableData.active-relative.hotness;
-                                    enabled: sex.current-value == sex.model[1];
-                                }
-                            }
-
-                            VerticalLayout {
-                                Text {
-                                    text: @tr("Swarthy | {}", swarthy.value);
-                                }
-
-                                swarthy := Slider {
-                                    minimum: 0;
-                                    maximum: 10;
-                                    width: 25%;
-                                    value: TableData.active-relative.swarthy;
-                                    enabled: sex.current-value == sex.model[1];
-                                }
-                            }
-
-                            VerticalLayout {
-                                Text {
-                                    text: @tr("Crazy | {}", crazy.value);
-                                }
-
-                                crazy := Slider {
-                                    minimum: 0;
-                                    maximum: 10;
-                                    width: 25%;
-                                    value: TableData.active-relative.crazy;
-                                    enabled: sex.current-value == sex.model[1];
-                                }
-                            }
-                        }
-
-                        HorizontalBox {
-                            spacing: 10px;
-                            VerticalLayout {
-                                Text {
-                                    text: "Lost Reason";
-                                }
-
-                                lost := LineEdit {
-                                    placeholder-text: "Lost Reason";
-                                    text: TableData.active-relative.lost-reason;
-                                }
-                            }
-                        }
-
-                        HorizontalBox {
-                            spacing: 10px;
-                            pinned := CheckBox {
-                                text: "Pinned";
-                                checked: TableData.active-relative.pinned;
-                            }
-                        }
-
-                        HorizontalBox {
-                            spacing: 10px;
-                            alignment: space-around;
-                            VerticalLayout {
-                                Text {
-                                    text: TableData.selected-mother-name != "" ? @tr("Update Mother | current {}", TableData.selected-mother-name) : "Choose Mother";
-                                }
-
-                                mother := ComboBox {
-                                    model: TableData.females2;
-                                }
-                            }
-
-                            VerticalLayout {
-                                Text {
-                                    text: TableData.selected-father-name != "" ? @tr("Update Father | current {}", TableData.selected-father-name) : "Choose Father";
-                                }
-
-                                father := ComboBox {
-                                    model: TableData.males;
-                                }
-                            }
-                        }
-
-                        HorizontalBox {
-                            Button {
-                                text: "Save";
-                                clicked => {
-                                    relative = {
-                                        first-name: first-name.text,
-                                        middle-name: middle-name.text,
-                                        last-name: last-name.text,
-                                        sex: sex.current-value,
-                                        phone: phone.text,
-                                        email: email.text,
-                                        birthday: birthday.text,
-                                        lost-reason: lost.text,
-                                        sameness: sameness.text,
-                                        pinned: pinned.checked,
-                                        hotness: hotness.value,
-                                        employable: employable.value,
-                                        crazy: crazy.value,
-                                        swarthy: swarthy.value,
-                                        mother-id: TableData.active-relative.mother-id,
-                                        father-id: TableData.active-relative.father-id,
-                                    };
-                                    TableData.update-relative(TableData.active-relative.id,relative, mother.current-value, father.current-value);
-                                    message.show();
-                                }
-                            }
-                        }
-                    }
-                }
-
-                GroupBox {
-                    VerticalLayout {
-                        spacing: 10px;
-                        HorizontalLayout {
-                            alignment: space-around;
-                            CustomButton {
-                                height: 40px;
-                                width: 120px;
-                                title: @tr("Delete");
-                                background: red;
-                                clicked => {
-                                    delete-prompt.show()
-                                }
-                            }
-                        }
+                CustomButton {
+                    title: "Upload new";
+                    height: 40px;
+                    width: 120px;
+                    background: #3b82f6;
+                    border-radius: 6px;
+                    clicked => {
+                        TableData.add-image-for-relative(TableData.active-relative.id);
+                        image-message-popup.show()
                     }
                 }
             }
