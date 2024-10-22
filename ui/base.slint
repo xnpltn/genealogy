@@ -6,6 +6,7 @@ import { Palette, Button } from "std-widgets.slint";
 import { TableData, CrudMessages } from "types.slint";
 import { Switch, TextEdit, HorizontalBox } from "std-widgets.slint";
 import { TaskBar } from "components/TaskBar.slint";
+import { MessagePopup } from "./components/message-popup.slint";
 
 export { TableData , CrudMessages }
 
@@ -148,12 +149,92 @@ export component Main inherits Window {
 export component UpdateWindow inherits Window {
     min-width: 1280px;
     min-height: 720px;
+
+    delete-relative-pupup := MessagePopup {
+        message-on-error: CrudMessages.delete-relative-error;
+        message-on-success: CrudMessages.delete-relative-success;
+        x-pos: (root.width - self.width) / 2;
+        y-pos: (root.height - self.height) / 2;
+    }
+
+    delete-prompt := PopupWindow {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        close-on-click: false;
+        height: 250px;
+        width: 400px;
+        Rectangle {
+            height: parent.height;
+            width: parent.width;
+            background: #ffffff;
+            border-radius: 8px;
+            drop-shadow-color: #00000029;
+            drop-shadow-offset-x: 0px;
+            drop-shadow-offset-y: 4px;
+            drop-shadow-blur: 24px;
+            VerticalLayout {
+                padding: 20px;
+                spacing: 24px;
+                alignment: space-between;
+                Text {
+                    text: @tr("Confirm Delete");
+                    font-size: 18px;
+                    font-weight: 500;
+                    horizontal-alignment: center;
+                    color: #111827;
+                }
+
+                HorizontalLayout {
+                    spacing: 12px;
+                    alignment: end;
+                    CustomButton {
+                        width: 100px;
+                        height: 36px;
+                        title: "Cancel";
+                        background: #f3f4f6;
+                        text-color: #374151;
+                        border-radius: 6px;
+                        clicked => {
+                            delete-prompt.close();
+                        }
+                    }
+
+                    CustomButton {
+                        width: 100px;
+                        height: 36px;
+                        title: "Delete";
+                        background: #ef4444;
+                        text-color: #ffffff;
+                        border-radius: 6px;
+                        clicked => {
+                            TableData.delete-relative(TableData.active-relative.id);
+                            delete-relative-pupup.show()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     HorizontalLayout {
 
         VerticalLayout {
             Header {
                 title: @tr("Update {}", TableData.active-relative.first-name);
                 HorizontalLayout {
+                    spacing: 10px;
+                    CustomButton {
+                        height: 35px;
+                        width: 100px;
+                        title: @tr("Delete");
+                        background: #ef4444;
+                        border-radius: 6px;
+                        text-color: white;
+                        clicked => {
+                            delete-prompt.show()
+                        }
+                    }
+
                     Switch {
                         text: @tr("Dark Mode");
                         checked: Palette.color-scheme == ColorScheme.dark;

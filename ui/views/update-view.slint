@@ -85,72 +85,6 @@ export component UpdateView inherits Rectangle {
         y-pos: (root.height - self.height) / 2;
     }
 
-    delete-relative-pupup := MessagePopup {
-        message-on-error: CrudMessages.delete-relative-error;
-        message-on-success: CrudMessages.delete-relative-success;
-        x-pos: (root.width - self.width) / 2;
-        y-pos: (root.height - self.height) / 2;
-    }
-
-    delete-prompt := PopupWindow {
-        x: (root.width - self.width) / 2;
-        y: (root.height - self.height) / 2;
-        close-on-click: false;
-        height: 250px;
-        width: 400px;
-        Rectangle {
-            height: parent.height;
-            width: parent.width;
-            background: #ffffff;
-            border-radius: 8px;
-            drop-shadow-color: #00000029;
-            drop-shadow-offset-x: 0px;
-            drop-shadow-offset-y: 4px;
-            drop-shadow-blur: 24px;
-            VerticalLayout {
-                padding: 20px;
-                spacing: 24px;
-                alignment: space-between;
-                Text {
-                    text: @tr("Confirm Delete");
-                    font-size: 18px;
-                    font-weight: 500;
-                    horizontal-alignment: center;
-                    color: #111827;
-                }
-
-                HorizontalLayout {
-                    spacing: 12px;
-                    alignment: end;
-                    CustomButton {
-                        width: 100px;
-                        height: 36px;
-                        title: "Cancel";
-                        background: #f3f4f6;
-                        text-color: #374151;
-                        border-radius: 6px;
-                        clicked => {
-                            delete-prompt.close();
-                        }
-                    }
-
-                    CustomButton {
-                        width: 100px;
-                        height: 36px;
-                        title: "Delete";
-                        background: #ef4444;
-                        text-color: #ffffff;
-                        border-radius: 6px;
-                        clicked => {
-                            TableData.delete-relative(TableData.active-relative.id);
-                            delete-relative-pupup.show()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     VerticalLayout {
         in-out property <bool> pinned: TableData.active-relative.pinned;
         in-out property <float> swarthy;
@@ -488,17 +422,6 @@ export component UpdateView inherits Rectangle {
                                             };
                                             TableData.update-relative(TableData.active-relative.id, relative, mother.current-value, father.current-value);
                                             message.show();
-                                        }
-                                    }
-
-                                    CustomButton {
-                                        height: 40px;
-                                        width: 120px;
-                                        title: @tr("Delete");
-                                        background: #ef4444;
-                                        border-radius: 6px;
-                                        clicked => {
-                                            delete-prompt.show()
                                         }
                                     }
                                 }
