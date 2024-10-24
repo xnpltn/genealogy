@@ -3,18 +3,11 @@ import { TabWidget, StandardTableView, GroupBox, VerticalBox } from "std-widgets
 import { Table, FemalesTable, EmployeesTable } from "../components/table.slint";
 import { TableData , ActiveTab} from "../types.slint";
 export component Tabs inherits Rectangle {
-
     callback show_popup_window();
-
     tab-widget := TabWidget {
         preferred-height: 100%;
         Tab {
             title: @tr("Relatives");
-            Text {
-                y: 0;
-                x: 20px;
-                text: @tr("relatives");
-            }
 
             VerticalBox {
                 alignment: stretch;
@@ -33,12 +26,6 @@ export component Tabs inherits Rectangle {
         Tab {
             title: @tr("Females");
 
-            Text {
-                y: 0;
-                x: 20px;
-                text: @tr("Females");
-            }
-
             VerticalBox {
                 alignment: stretch;
                 GroupBox {
@@ -52,12 +39,6 @@ export component Tabs inherits Rectangle {
 
         Tab {
             title: "Employees";
-
-            Text {
-                y: 0;
-                x: 20px;
-                text: @tr("Employees");
-            }
 
             VerticalBox {
                 alignment: stretch;

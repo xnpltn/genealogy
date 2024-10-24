@@ -31,7 +31,22 @@ pub fn create_new_relative_with_father_only() -> String {
 pub fn create_new_relative_with_both_parents() -> String {
     let query = r#"
         INSERT INTO relative 
-            (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, mother_id, father_id, employable, swarthy, hotness, crazy)
+            (sameness, 
+            lost_reason, 
+            sex, 
+            birthday, 
+            fname, 
+            mname, 
+            lname, 
+            phone, 
+            email, 
+            pinned, 
+            mother_id, 
+            father_id, 
+            employable, 
+            swarthy, 
+            hotness, 
+            crazy)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 "#;
@@ -123,9 +138,13 @@ pub fn update_mother_only() -> String {
                 phone = $8,
                 email = $9,
                 pinned = $10,
-                mother_id =  $11
+                mother_id =  $11,
+                employable = $12 ,
+                swarthy = $13, 
+                hotness = $14, 
+                crazy = $15
             WHERE 
-                id = $12
+                id = $16
             ;
 
     "#
@@ -147,9 +166,13 @@ pub fn update_father_only() -> String {
                 phone = $8,
                 email = $9,
                 pinned = $10,
-                father_id = $11
+                father_id = $11,
+                employable = $12,
+                swarthy = $13, 
+                hotness = $14, 
+                crazy = $15
             WHERE 
-                id = $12
+                id = $16
             ;
     "#
     .to_string();
@@ -171,9 +194,13 @@ pub fn update_both_parents() -> String {
                 email = $9,
                 pinned = $10,
                 father_id = $11,
-                mother_id = $12
+                mother_id = $12,
+                employable = $13 ,
+                swarthy = $14, 
+                hotness = $15, 
+                crazy = $16
             WHERE 
-                id = $13
+                id = $17
             ;
     "#
     .to_string();
@@ -193,9 +220,13 @@ pub fn update_no_parents() -> String {
                 lname = $7,
                 phone = $8,
                 email = $9,
-                pinned = $10
+                pinned = $10,
+                employable = $11 ,
+                swarthy = $12, 
+                hotness = $13, 
+                crazy = $14
             WHERE 
-                id = $11
+                id = $15
             ;
 
     "#
@@ -283,5 +314,14 @@ pub fn add_note_for_relative() -> String {
         VALUES
             ($1, $2)
     ;"#;
+    query.to_string()
+}
+
+pub fn get_images_for_relative() -> String {
+    let query = r#"
+        SELECT * FROM image WHERE relative_id = $1
+        ORDER BY created_at DESC
+        ;
+    "#;
     query.to_string()
 }

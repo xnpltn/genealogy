@@ -1,4 +1,6 @@
 
+export enum Command { PIN, UNPIN}
+
 export struct Relative {
     id: string,
     first-name: string,
@@ -26,7 +28,7 @@ export struct Note {
   text: string,
 }
 
-export struct File {
+/*export struct File {
   id: string,
   imported_name: string,
   imported_hash: string,
@@ -36,8 +38,16 @@ export struct File {
   filename: string,
   pinned: string,
     
-}
+}*/
 
+export struct File {
+  id: string,
+  relative_id: string,
+  type: string,
+  filename: string,
+  pinned: bool,
+    
+}
 export enum ActiveTab{relative, employees, females}
 
 
@@ -58,18 +68,27 @@ export global TableData {
     callback add-image-for-relative(string);
     in-out property <[[StandardListViewItem]]> notes-rows-for-active-relative;
     in-out property <[[StandardListViewItem]]> files-rows-for-active-relative;
+    in-out property <[[StandardListViewItem]]> images-rows-for-active-relative;
     in-out property <Note> active-note;
     in-out property <bool> has-active-note;
     in-out property <int> current-notes-row;
     in-out property <File> active-file;
     in-out property <bool> has-active-file;
     in-out property <int> current-files-row;
-    callback pin-active-note(string);
+    in-out property <int> current-image-row;
+    in-out property <bool> has-active-image;
+    callback pin-active-note(string, Command);
+    callback pin-active-file(string, Command); // first string is for id, second is for command. "PIN" or UNPIN
+    callback delete-active-note(string); // the string is for id ( for validation)
+    callback delete-active-file(string); // the string id for id (for validation)
     callback save-edited-note(string, string); // first string is id second it the note to save.
     callback current-note-row-change(int);
     callback current-file-row-change(int);
+    callback current-image-row-change(int);
+    callback delete-current-image(int);
     in-out property <Relative> new-relative;
     in-out property <string> active-relative-image;
+    callback send-close-request();
     callback create-new-relative(Relative, string, string); // first string is mother name, second is father name
     callback update-relative(string, Relative, string, string); // first parameter is an id used to track the relative. third is mother, fourth is father
     callback delete-relative(string);

@@ -1,8 +1,9 @@
 import {Palette,  Button, ScrollView, StandardTableView, TabWidget, VerticalBox } from "std-widgets.slint";
-import { TableData , Note} from "../types.slint";
+import { TableData , Note, Command} from "../types.slint";
 import { CustomButton } from "../components/button.slint";
 import { ListView, HorizontalBox, TextEdit } from "std-widgets.slint";
 import { TaskBar } from "../components/TaskBar.slint";
+import { DeleteComfirm } from "../components/delete-popup.slint";
 
 
 
@@ -35,6 +36,27 @@ export component NotesSect inherits Rectangle {
     background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #eceff4;
     border-radius: 10px;
     callback open-note-popup();
+    callback delte-note();
+    callback delete-file();
+    note-delete := DeleteComfirm {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        clicked => {
+            TableData.delete-active-note(TableData.active-note.id);
+            notes-table.current-row = -1;
+            self.close()
+        }
+    }
+
+    file-delete := DeleteComfirm {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        clicked => {
+            TableData.delete-active-file(TableData.active-file.id);
+            files-table.current-row = -1;
+            self.close()
+        }
+    }
 
     HorizontalLayout {
         padding: 16px;
@@ -43,26 +65,32 @@ export component NotesSect inherits Rectangle {
         VerticalLayout {
             Rectangle {
                 width: 50%;
+                background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #eceff4;
                 tw := TabWidget {
-
                     Tab {
                         title: @tr("Notes");
                         VerticalLayout {
-                            spacing: 10px;
+                            spacing: 16px;
                             HorizontalLayout {
-                                spacing: 10px;
+                                spacing: 16px;
                             }
 
                             if TableData.notes-error != "": TableHeader {
                                 column2: TableData.notes-error;
+                                background: Palette.color-scheme == ColorScheme.dark ? #bf616a : #c24141;
                             }
                             Rectangle {
-                                border-color: #12d;
-                                border-radius: 2px;
-                                border-width: 2px;
-                                padding: 40px;
+                                background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #fff;
+                                border-color: Palette.color-scheme == ColorScheme.dark ? #434c5e : #d8dee9;
+                                border-radius: 8px;
+                                border-width: 1px;
+                                padding: 24px;
+                                drop-shadow-offset-x: 0px;
+                                drop-shadow-offset-y: 4px;
+                                drop-shadow-blur: 12px;
+                                drop-shadow-color: Palette.color-scheme == ColorScheme.dark ? #00000066 : #0000001a;
 
-                                StandardTableView {
+                                notes-table := StandardTableView {
                                     width: 100%;
                                     height: 100%;
                                     columns: [{ title: "id" }, { title: "text" }, { title: "pinned" }, { title: "updated at" }];
@@ -71,7 +99,6 @@ export component NotesSect inherits Rectangle {
                                         TableData.has-active-note = true;
                                         TableData.current-note-row-change(TableData.current-notes-row);
                                     }
-
                                     rows: TableData.notes-rows-for-active-relative;
                                 }
                             }
@@ -79,21 +106,26 @@ export component NotesSect inherits Rectangle {
                     }
 
                     Tab {
-                        title: "Files";
+                        title: @tr("Files");
                         VerticalLayout {
-                            spacing: 10px;
-                            padding: 10px;
+                            spacing: 16px;
+                            padding: 16px;
                             if TableData.files_error != "": TableHeader {
                                 column2: TableData.files_error;
+                                background: Palette.color-scheme == ColorScheme.dark ? #bf616a : #c24141;
                             }
-
                             Rectangle {
-                                border-color: #12d;
-                                border-radius: 2px;
-                                border-width: 2px;
-                                padding: 40px;
+                                background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #fff;
+                                border-color: Palette.color-scheme == ColorScheme.dark ? #434c5e : #d8dee9;
+                                border-radius: 8px;
+                                border-width: 1px;
+                                padding: 24px;
+                                drop-shadow-offset-x: 0px;
+                                drop-shadow-offset-y: 4px;
+                                drop-shadow-blur: 12px;
+                                drop-shadow-color: Palette.color-scheme == ColorScheme.dark ? #00000066 : #0000001a;
 
-                                StandardTableView {
+                                files-table := StandardTableView {
                                     width: 100%;
                                     height: 100%;
                                     columns: [
@@ -108,7 +140,6 @@ export component NotesSect inherits Rectangle {
                                         TableData.has-active-file = true;
                                         TableData.current-file-row-change(TableData.current-files-row);
                                     }
-
                                     rows: TableData.files-rows-for-active-relative;
                                 }
                             }
@@ -123,20 +154,29 @@ export component NotesSect inherits Rectangle {
             note-container := Rectangle {
                 in-out property <string> text;
                 in-out property <bool> show-input;
-                border-radius: 10px;
-                VerticalLayout {
-                    spacing: 10px;
+                border-radius: 8px;
+                if notes-table.current-row > -1:VerticalLayout {
+                    spacing: 16px;
                     Text {
                         text: @tr("Active Note | id: {}", TableData.active-note.id);
                         font-size: 16px;
+                        font-weight: 600;
+                        color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
                         horizontal-alignment: center;
                     }
 
                     Rectangle {
                         background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #e5e9f0;
-                        border-radius: 10px;
-                        padding: 20px;
-                        if show-input:  note-input := TextEdit {
+                        border-radius: 8px;
+                        border-width: 1px;
+                        border-color: Palette.color-scheme == ColorScheme.dark ? #434c5e : #d8dee9;
+                        padding: 24px;
+                        drop-shadow-offset-x: 0px;
+                        drop-shadow-offset-y: 4px;
+                        drop-shadow-blur: 12px;
+                        drop-shadow-color: Palette.color-scheme == ColorScheme.dark ? #00000066 : #0000001a;
+
+                        note-input := TextEdit {
                             in-out property <string> note-text <=> note-container.text;
                             width: 100%;
                             height: 100%;
@@ -154,38 +194,59 @@ export component NotesSect inherits Rectangle {
 
             if tw.current-index == 0:HorizontalBox {
                 alignment: center;
+                spacing: 12px;
+
                 CustomButton {
                     title: "Add Note";
                     height: 40px;
                     width: 120px;
-                    text-color: black;
-                    background: #dae8fc;
+                    text-color: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #2e3440;
+                    background: Palette.color-scheme == ColorScheme.dark ? #88c0d0 : #81a1c1;
+                    border-radius: 6px;
                     clicked => {
                         open-note-popup()
                     }
                 }
 
-                CustomButton {
+                if notes-table.current-row > -1: CustomButton {
                     height: 40px;
                     width: 120px;
-                    title: "Pin Note";
-                    text-color: black;
-                    background: #dae811;
+                    title: TableData.active-note.pinned ? "Unpin Note" : "Pin Note";
+                    text-color: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #2e3440;
+                    background: Palette.color-scheme == ColorScheme.dark ? #a3be8c : #8fbcbb;
+                    border-radius: 6px;
                     clicked => {
-                        TableData.pin-active-note(TableData.active-note.id);
-                        note-container.show-input = false;
+                        if TableData.active-note.pinned {
+                            TableData.pin-active-note(TableData.active-note.id, Command.UNPIN);
+                            note-container.show-input = false;
+                        } else if !TableData.active-note.pinned {
+                            TableData.pin-active-note(TableData.active-note.id, Command.PIN);
+                            note-container.show-input = false;
+                        }
                     }
                 }
-
-                CustomButton {
+                if notes-table.current-row > -1:CustomButton {
                     height: 40px;
                     width: 120px;
                     title: "Save Note";
-                    text-color: white;
-                    background: #000099;
+                    text-color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #ffffff;
+                    background: Palette.color-scheme == ColorScheme.dark ? #5e81ac : #5e81ac;
+                    border-radius: 6px;
                     clicked => {
                         TableData.save-edited-note(TableData.active-note.id, note-container.text);
                         note-container.text = TableData.active-note.text;
+                        notes-table.current-row = -1;
+                    }
+                }
+                if notes-table.current-row > -1:CustomButton {
+                    height: 40px;
+                    width: 140px;
+                    title: "Delete Note";
+                    text-color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #ffffff;
+                    background: Palette.color-scheme == ColorScheme.dark ? #bf616a : #bf616a;
+                    border-radius: 6px;
+                    clicked => {
+                        note-delete.show()
                     }
                 }
             }
@@ -193,34 +254,90 @@ export component NotesSect inherits Rectangle {
 
         // files
         if tw.current-index == 1: VerticalLayout {
+            if files-table.current-row >= 0: Rectangle {
+                border-radius: 8px;
+                padding: 24px;
+                background: Palette.color-scheme == ColorScheme.dark ? #3b4252 : #e5e9f0;
+                VerticalLayout {
+                    spacing: 16px;
+                    alignment: LayoutAlignment.center;
+                    Text {
+                        text: @tr("Active File");
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
+                        horizontal-alignment: center;
+                    }
+
+                    Rectangle {
+                        padding: 24px;
+                        border-radius: 8px;
+                        background: Palette.color-scheme == ColorScheme.dark ? #434c5e : #ffffff;
+                        drop-shadow-offset-x: 0px;
+                        drop-shadow-offset-y: 4px;
+                        drop-shadow-blur: 12px;
+                        drop-shadow-color: Palette.color-scheme == ColorScheme.dark ? #00000066 : #0000001a;
+                        border-width: 1px;
+                        border-color: Palette.color-scheme == ColorScheme.dark ? #4c566a : #d8dee9;
+                        VerticalLayout {
+                            spacing: 12px;
+                            alignment: center;
+                            Text {
+                                text: @tr("filename: {}", TableData.active-file.filename);
+                                horizontal-alignment: center;
+                                font-weight: 600;
+                                color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #2e3440;
+                            }
+
+                            Text {
+                                text: @tr("File Type: {}", TableData.active-file.type);
+                                horizontal-alignment: center;
+                                color: Palette.color-scheme == ColorScheme.dark ? #d8dee9 : #4c566a;
+                            }
+                        }
+                    }
+                }
+            }
             HorizontalBox {
                 alignment: center;
-
+                spacing: 12px;
                 CustomButton {
-                    title: "Add File";
+                    title: @tr("Add File");
                     height: 40px;
                     width: 120px;
-                    text-color: black;
-                    background: #dae8fc;
+                    text-color: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #2e3440;
+                    background: Palette.color-scheme == ColorScheme.dark ? #88c0d0 : #81a1c1;
+                    border-radius: 6px;
                     clicked => {
                         TableData.add-files-for-relative(TableData.current_row, TableData.active-relative.id);
                     }
                 }
 
-                CustomButton {
+                if files-table.current-row >= 0: CustomButton {
                     height: 40px;
                     width: 120px;
-                    title: "Pin File";
-                    text-color: black;
-                    background: #dae811;
+                    title: TableData.active-file.pinned ? "Unpin" : "Pin";
+                    text-color: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #2e3440;
+                    background: Palette.color-scheme == ColorScheme.dark ? #a3be8c : #8fbcbb;
+                    border-radius: 6px;
+                    clicked => {
+                        if TableData.active-file.pinned {
+                            TableData.pin-active-file(TableData.active-file.id, Command.UNPIN)
+                        } else if !TableData.active-file.pinned {
+                            TableData.pin-active-file(TableData.active-file.id, Command.PIN)
+                        }
+                    }
                 }
-
-                CustomButton {
+                if files-table.current-row >= 0:CustomButton {
                     height: 40px;
                     width: 120px;
                     title: "Delete File";
-                    text-color: red;
-                    background: #000099;
+                    text-color: Palette.color-scheme == ColorScheme.dark ? #eceff4 : #ffffff;
+                    background: Palette.color-scheme == ColorScheme.dark ? #bf616a : #bf616a;
+                    border-radius: 6px;
+                    clicked => {
+                        file-delete.show()
+                    }
                 }
             }
         }

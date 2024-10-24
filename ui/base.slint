@@ -8,6 +8,7 @@ import { Switch, TextEdit, HorizontalBox } from "std-widgets.slint";
 import { TaskBar } from "components/TaskBar.slint";
 import { MessagePopup } from "./components/message-popup.slint";
 
+
 export { TableData , CrudMessages }
 
 component Header inherits Rectangle {
@@ -49,12 +50,14 @@ export component Main inherits Window {
             border-radius: 10px;
             border-color: black;
             border-width: 3px;
+            background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #eceff4;
             VerticalLayout {
+                padding: 20px;
                 TaskBar {
                     h: 50px;
                     padding: 20px;
                     alignment: space-between;
-                    background: whitesmoke;
+                    background: Palette.color-scheme == ColorScheme.dark ? #2e3440 : #eceff4;
                     Text {
                         text: @tr("Add Note for {} {}", TableData.active-relative.first-name, TableData.active-relative.last-name);
                         font-size: 16px;
@@ -83,9 +86,10 @@ export component Main inherits Window {
                         CustomButton {
                             text-color: black;
                             title: "Save";
-                            background: #dae8fc;
+                            background: #1fe8ff;
                             clicked => {
                                 TableData.add-note-for-relative(TableData.active-relative.id, note.text);
+                                note-pop-up.close();
                             }
                         }
                     }
@@ -177,10 +181,11 @@ export component UpdateWindow inherits Window {
                 spacing: 24px;
                 alignment: space-between;
                 Text {
-                    text: @tr("Confirm Delete");
+                    text: @tr("Confirm Delete, This Action is irreversible");
                     font-size: 18px;
                     font-weight: 500;
                     horizontal-alignment: center;
+                    wrap: word-wrap;
                     color: #111827;
                 }
 
@@ -195,6 +200,7 @@ export component UpdateWindow inherits Window {
                         text-color: #374151;
                         border-radius: 6px;
                         clicked => {
+                            TableData.send-close-request();
                             delete-prompt.close();
                         }
                     }

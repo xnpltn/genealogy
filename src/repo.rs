@@ -416,3 +416,54 @@ pub async fn get_notes_rows_for_relative(
 
     Ok(notes)
 }
+
+pub async fn get_files_rows_for_relative(
+    id: String,
+    pool: &SqlitePool,
+) -> Result<Rc<VecModel<ModelRc<StandardListViewItem>>>, Box<dyn std::error::Error>> {
+    let notes: Rc<VecModel<slint::ModelRc<StandardListViewItem>>> = Rc::new(VecModel::default());
+    let rows = sqlx::query(&sql::get_files_for_relative())
+        .bind(id)
+        .fetch_all(pool)
+        .await?;
+
+    for row in rows {
+        let items = Rc::new(VecModel::default());
+        let id: i32 = row.try_get("id").unwrap_or(0);
+        let filename: String = row.try_get("filename").unwrap_or("null".into());
+        let file_type: String = row.try_get("type").unwrap_or("null".into());
+        let pinned: bool = row.try_get("pinned").unwrap_or(false);
+        let create_at: String = row.try_get("filename_timestamp").unwrap_or("null".into());
+        println!("file name: {filename}, {id}");
+
+        items.push(slint::format!("{id}").into());
+        items.push(slint::format!("{filename}").into());
+        items.push(slint::format!("{file_type}").into());
+        items.push(slint::format!("{pinned}").into());
+        items.push(slint::format!("{create_at}").into());
+        notes.push(items.into());
+    }
+
+    Ok(notes)
+}
+
+pub async fn get_image_rows_for_relative(
+    id: String,
+    pool: &SqlitePool,
+) -> Result<Rc<VecModel<ModelRc<StandardListViewItem>>>, Box<dyn std::error::Error>> {
+    let images: Rc<VecModel<slint::ModelRc<StandardListViewItem>>> = Rc::new(VecModel::default());
+    println!("fet for id {id}");
+    let rows = sqlx::query(&sql::get_images_for_relative())
+        .bind(id)
+        .fetch_all(pool)
+        .await?;
+
+    for row in rows {
+        let items = Rc::new(VecModel::default());
+        let filename: String = row.try_get("filename").unwrap_or("null".into());
+        items.push(slint::format!("{filename}").into());
+        images.push(items.into());
+    }
+
+    Ok(images)
+}

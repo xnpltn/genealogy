@@ -70,6 +70,7 @@ export component UpdateView inherits Rectangle {
                         clicked => {
                             TableData.selected-mother-name = "";
                             TableData.selected-father-name = "";
+                            TableData.send-close-request();
                             message.close()
                         }
                     }
@@ -355,7 +356,7 @@ export component UpdateView inherits Rectangle {
                                     alignment: space-around;
                                     VerticalLayout {
                                         Text {
-                                            text: TableData.selected-mother-name != "" ? @tr("Update Mother | current {}", TableData.selected-mother-name) : "Choose Mother";
+                                            text: TableData.selected-mother-name != "" ? @tr("Update Mother | Current {}", TableData.selected-mother-name) : "Choose Mother";
                                             font-size: 14px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
@@ -369,7 +370,7 @@ export component UpdateView inherits Rectangle {
 
                                     VerticalLayout {
                                         Text {
-                                            text: TableData.selected-father-name != "" ? @tr("Update Father | current {}", TableData.selected-father-name) : "Choose Father";
+                                            text: TableData.selected-father-name != "" ? @tr("Update Father | Current {}", TableData.selected-father-name) : "Choose Father";
                                             font-size: 14px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
@@ -451,15 +452,43 @@ export component UpdateView inherits Rectangle {
                     }
                 }
 
-                CustomButton {
-                    title: "Upload new";
-                    height: 40px;
-                    width: 120px;
-                    background: #3b82f6;
-                    border-radius: 6px;
-                    clicked => {
-                        TableData.add-image-for-relative(TableData.active-relative.id);
-                        image-message-popup.show()
+                HorizontalBox {
+
+                    CustomButton {
+                        title: "Upload Image";
+                        height: 40px;
+                        width: 140px;
+                        background: #3b82f6;
+                        border-radius: 6px;
+                        clicked => {
+                            TableData.add-image-for-relative(TableData.active-relative.id);
+                            image-message-popup.show()
+                        }
+                    }
+
+                    if image-table.current-row > -1: CustomButton {
+                        title: "Delete";
+                        height: 40px;
+                        width: 140px;
+                        background: red;
+                        border-radius: 6px;
+                        clicked => {
+                            TableData.delete-current-image(image-table.current-row);
+                        }
+                    }
+                }
+
+                image-table := StandardTableView {
+                    width: 230px;
+                    height: 200px;
+                    columns: [
+                        { title: "Images" },
+                    ];
+                    rows: TableData.images-rows-for-active-relative;
+                    current-row-changed => {
+                        TableData.current-image-row = self.current-row;
+                        TableData.has-active-image = true;
+                        TableData.current-image-row-change(TableData.current-image-row)
                     }
                 }
             }
