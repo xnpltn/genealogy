@@ -1,7 +1,7 @@
 #![allow(deprecated)]
 use native_dialog::FileDialog;
 use slint::*;
-use sqlx::{migrate, Row};
+use sqlx::Row;
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
 use std::fs;
 use std::io;
@@ -75,7 +75,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let pool = SqlitePool::connect(std::format!("{}/store.db", work_dir).as_str()).await?;
-    migrate!("./migrations").run(&pool).await?;
+    let _ = sqlx::query(&sql::create_tables()).execute(&pool).await?;
+    //migrate!("./migrations").run(&pool).await?;
     let app = Main::new()?;
 
     let females = repo::get_female_relatives(&pool).await?;
@@ -99,6 +100,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let females2 = repo::get_mothers(&pool).await?;
         move || {
             let update_window = UpdateWindow::new().unwrap();
+            let check_svg =
+                slint::Image::load_from_path(std::path::Path::new("assets/icons/check-circle.svg"))
+                    .unwrap();
+            let cross_svg =
+                slint::Image::load_from_path(std::path::Path::new("assets/icons/x-circle.svg"))
+                    .unwrap();
+            update_window
+                .global::<TableData>()
+                .set_cross_image(cross_svg);
+            update_window
+                .global::<TableData>()
+                .set_check_image(check_svg);
             update_window.global::<TableData>().on_send_close_request({
                 let weak_app = update_window.as_weak();
                 move || {
@@ -407,13 +420,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         }
                                     });
                                     println!("deleted where id is {}", id.to_string());
-                                    weak_update_window
-                                        .upgrade()
-                                        .unwrap()
-                                        .global::<CrudMessages>()
-                                        .set_delete_relative_success(SharedString::from(
-                                            "Deleted Successfully",
-                                        ));
+                                    weak_update_window.unwrap().hide().unwrap();
                                 }
                                 Err(e) => {
                                     println!("error deleting: {e}");
@@ -591,6 +598,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let males = repo::get_male_relatives(&pool).await.unwrap();
                     let females2 = repo::get_mothers(&pool).await.unwrap();
                     let create_window = CreateWindow::new().unwrap();
+                    let check_svg = slint::Image::load_from_path(std::path::Path::new(
+                        "assets/icons/check-circle.svg",
+                    ))
+                    .unwrap();
+                    let cross_svg = slint::Image::load_from_path(std::path::Path::new(
+                        "assets/icons/x-circle.svg",
+                    ))
+                    .unwrap();
+                    create_window.global::<TableData>().on_send_close_request({
+                        let weak_app = Rc::new(create_window.as_weak());
+                        move || {
+                            if weak_app
+                                .unwrap()
+                                .global::<TableData>()
+                                .get_create_error()
+                                .len()
+                                <= 0
+                            {
+                                weak_app.unwrap().hide().unwrap();
+                            }
+                        }
+                    });
+                    create_window
+                        .global::<TableData>()
+                        .set_cross_image(cross_svg);
+                    create_window
+                        .global::<TableData>()
+                        .set_check_image(check_svg);
                     create_window
                         .global::<TableData>()
                         .set_females(females.clone().into());
@@ -629,8 +664,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     app.global::<TableData>().on_current_row_changed({
-        let weak_app = app.as_weak();
-        let pool = pool.clone();
+        let weak_app = Rc::new(app.as_weak());
+        let pool = Rc::new(pool.clone());
         move |row| {
             let active_tab = weak_app.unwrap().global::<TableData>().get_active_tab();
             //weak_app
@@ -642,7 +677,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let table_data = table_data.row_data(row as usize).unwrap();
                 if let Some(id) = table_data.row_data(0) {
                     let id = id.text;
-                    let pool = pool.clone();
+                    let pool = Rc::clone(&pool);
                     let weak_app = weak_app.clone();
 
                     let _ = slint::spawn_local(async move {
@@ -657,7 +692,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             "#,
                         )
                         .bind(id.clone().to_string())
-                        .fetch_one(&pool)
+                        .fetch_one(pool.deref())
                         .await
                         {
                             filename = f.try_get("filename").unwrap_or("".to_string());
@@ -668,7 +703,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         match image {
                             Ok(img) => {
                                 weak_app
-                                    .upgrade()
                                     .unwrap()
                                     .global::<TableData>()
                                     .set_active_profile_image(img);
@@ -723,7 +757,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             if let Ok(m_row) =
                                 sqlx::query("SELECT full_name FROM relative WHERE id = $1")
                                     .bind(relative.mother_id)
-                                    .fetch_one(&pool)
+                                    .fetch_one(pool.deref())
                                     .await
                             {
                                 selected_mother_name = m_row.get("full_name");
@@ -731,7 +765,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             if let Ok(f_row) =
                                 sqlx::query("SELECT full_name FROM relative WHERE id = $1")
                                     .bind(relative.father_id)
-                                    .fetch_one(&pool)
+                                    .fetch_one(pool.deref())
                                     .await
                             {
                                 selected_father_name = f_row.get("full_name");
@@ -754,8 +788,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 ));
                         }
 
-                        get_all_files_for_relative(id.to_string(), &pool, weak_app.clone()).await;
-                        get_all_notes_for_relative(id.to_string(), &pool, weak_app.clone()).await;
+                        get_all_files_for_relative(
+                            id.to_string(),
+                            Rc::clone(&pool),
+                            Rc::clone(&weak_app),
+                        )
+                        .await;
+                        get_all_notes_for_relative(
+                            id.to_string(),
+                            Rc::clone(&pool),
+                            Rc::clone(&weak_app),
+                        )
+                        .await;
                     })
                     .unwrap();
                 }
@@ -1084,13 +1128,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .await
                             {
                                 weak_app
-                                    .upgrade()
                                     .unwrap()
                                     .global::<TableData>()
                                     .set_files_rows_for_active_relative(files.clone().into());
                             }
                         }
                         Err(e) => {
+                            // unlikely to fail
                             println!("{e}");
                         }
                     }
@@ -1127,7 +1171,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .await
                                 {
                                     weak_app
-                                        .upgrade()
                                         .unwrap()
                                         .global::<TableData>()
                                         .set_files_rows_for_active_relative(files.clone().into());
@@ -1152,7 +1195,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 };
                                 println!("file and type: {filename}, {file_type}");
                                 weak_app
-                                    .upgrade()
                                     .unwrap()
                                     .global::<TableData>()
                                     .set_active_file(file.into());
@@ -1187,7 +1229,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .await
                                 {
                                     weak_app
-                                        .upgrade()
                                         .unwrap()
                                         .global::<TableData>()
                                         .set_files_rows_for_active_relative(files.clone().into());
@@ -1213,7 +1254,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 };
                                 println!("file and type: {filename}, {file_type}");
                                 weak_app
-                                    .upgrade()
                                     .unwrap()
                                     .global::<TableData>()
                                     .set_active_file(file.into());
@@ -1235,8 +1275,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .set_females2(females2.clone().into());
 
     app.global::<TableData>().on_add_files_for_relative({
-        let weak_app = app.as_weak();
-        let pool = pool.clone();
+        let weak_app = Rc::new(app.as_weak());
+        let pool = Rc::new(pool.clone());
         move |row, id| {
             let weak_app = weak_app.clone();
             if id == "" {
@@ -1329,11 +1369,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                                     .unwrap()
                                                     .to_string(),
                                             )
-                                            .execute(&pool)
+                                            .execute(pool.deref())
                                             .await;
                                         get_all_files_for_relative(
                                             id.to_string(),
-                                            &pool,
+                                            Rc::clone(&pool),
                                             weak_app.clone(),
                                         )
                                         .await;
@@ -1347,7 +1387,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                                     .await
                                                 {
                                                     weak_app
-                                                        .upgrade()
                                                         .unwrap()
                                                         .global::<TableData>()
                                                         .set_files_rows_for_active_relative(
@@ -1374,8 +1413,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     app.global::<TableData>().on_add_note_for_relative({
-        let weak_app = app.as_weak();
-        let pool = pool.clone();
+        let weak_app = Rc::new(app.as_weak());
+        let pool = Rc::new(pool.clone());
         move |id, note| {
             println!("{id}{note}");
             let weak_app = weak_app.clone();
@@ -1388,12 +1427,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 let _ = slint::spawn_local({
                     let weak_app = weak_app.unwrap().as_weak();
-                    let pool = pool.clone();
+                    let pool = Rc::clone(&pool);
                     async move {
                         let res = sqlx::query(&sql::add_note_for_relative())
                             .bind(id.to_string())
                             .bind(note.to_string())
-                            .execute(&pool)
+                            .execute(pool.deref())
                             .await;
                         match res {
                             Ok(_) => {
@@ -1921,26 +1960,28 @@ async fn update_global_data(
     let females2 = repo::get_mothers(&pool).await?;
     app.unwrap()
         .global::<TableData>()
-        .set_females(females.clone().into());
+        .set_females(females.into());
     app.unwrap()
         .global::<TableData>()
-        .set_relative(relatives.clone().into());
+        .set_relative(relatives.into());
     app.unwrap()
         .global::<TableData>()
-        .set_employees(employees.clone().into());
+        .set_employees(employees.into());
     app.unwrap()
         .global::<TableData>()
-        .set_females2(females2.clone().into());
-    app.unwrap()
-        .global::<TableData>()
-        .set_males(males.clone().into());
+        .set_females2(females2.into());
+    app.unwrap().global::<TableData>().set_males(males.into());
     Ok(())
 }
 
-async fn get_all_notes_for_relative(id: String, pool: &SqlitePool, weak_app: slint::Weak<Main>) {
+async fn get_all_notes_for_relative(
+    id: String,
+    pool: Rc<SqlitePool>,
+    weak_app: Rc<slint::Weak<Main>>,
+) {
     if let Ok(rows) = sqlx::query(&sql::get_notes_for_relative())
         .bind(id)
-        .fetch_all(pool)
+        .fetch_all(pool.deref())
         .await
     {
         let items = Rc::new(VecModel::default());
@@ -1951,24 +1992,30 @@ async fn get_all_notes_for_relative(id: String, pool: &SqlitePool, weak_app: sli
         weak_app
             .unwrap()
             .global::<TableData>()
-            .set_selected_relative_notes(items.clone().into());
+            .set_selected_relative_notes(items.into());
     }
 }
 
-async fn get_all_files_for_relative(id: String, pool: &SqlitePool, weak_app: slint::Weak<Main>) {
+async fn get_all_files_for_relative(
+    id: String,
+    pool: Rc<SqlitePool>,
+    weak_app: Rc<slint::Weak<Main>>,
+) {
     if let Ok(rows) = sqlx::query(&sql::get_files_for_relative())
         .bind(id)
-        .fetch_all(pool)
+        .fetch_all(pool.deref())
         .await
     {
         let items = Rc::new(VecModel::default());
         for row in rows {
             let name: String = row.try_get("filename").unwrap_or("".to_string());
-            items.push(SharedString::from(name));
+            if name.len() > 0 {
+                items.push(SharedString::from(name));
+            }
         }
         weak_app
             .unwrap()
             .global::<TableData>()
-            .set_selected_relative_files(items.clone().into());
+            .set_selected_relative_files(items.into());
     }
 }

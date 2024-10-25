@@ -37,7 +37,7 @@ export component UpdateView inherits Rectangle {
                     background: TableData.update-success != "" ? #E7F7EE : #FEE4E2;
 
                     Image {
-                        source: TableData.update-success != "" ? @image-url("../../assets/icons/check-circle.svg") : @image-url("../../assets/icons/x-circle.svg");
+                        source: TableData.update-success != "" ? TableData.check-image : TableData.cross-image;
                         width: 100%;
                         height: 100%;
                         x: (parent.width - self.width) / 2;

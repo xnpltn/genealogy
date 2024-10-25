@@ -110,7 +110,7 @@ export component Main inherits Window {
                         h: 20px;
                         Button {
                             text: "Edit Relative";
-                            height: 40px;
+                            height: 35px;
                             width: 140px;
                             clicked => {
                                 TableData.show-update-window();
@@ -200,7 +200,6 @@ export component UpdateWindow inherits Window {
                         text-color: #374151;
                         border-radius: 6px;
                         clicked => {
-                            TableData.send-close-request();
                             delete-prompt.close();
                         }
                     }
