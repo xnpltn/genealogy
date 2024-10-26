@@ -14,10 +14,10 @@ export struct Relative {
     lost-reason: string,
     sameness: string,
     note: string,
-    hotness: float,
-    swarthy: float,
-    crazy:float,
-    employable: float,
+    hotness: int,
+    swarthy: int,
+    crazy:int,
+    employable: int,
     mother_id: int,
     father_id: int,
 }
@@ -109,6 +109,9 @@ export global TableData {
     in-out property <string> update-eror;
     in-out property <image> check-image;
     in-out property <image> cross-image;
+    in-out property <image> temporary-image;
+    callback chose-temporary-image();
+    in-out property <string> temporary-image-path;
 }
 
 export global CrudMessages {

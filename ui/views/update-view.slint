@@ -88,10 +88,10 @@ export component UpdateView inherits Rectangle {
 
     VerticalLayout {
         in-out property <bool> pinned: TableData.active-relative.pinned;
-        in-out property <float> swarthy;
-        in-out property <float> crazy;
-        in-out property <float> hotness;
-        in-out property <float> employable;
+        in-out property <int> swarthy;
+        in-out property <int> crazy;
+        in-out property <int> hotness;
+        in-out property <int> employable;
         spacing: 16px;
         padding: 24px;
 
@@ -114,14 +114,14 @@ export component UpdateView inherits Rectangle {
                         GroupBox {
                             padding: 24px;
                             VerticalLayout {
-                                spacing: 16px;
+                                spacing: 3px;
 
                                 HorizontalBox {
-                                    spacing: 16px;
+                                    spacing: 3px;
                                     VerticalLayout {
                                         Text {
                                             text: "First Name";
-                                            font-size: 14px;
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -136,7 +136,7 @@ export component UpdateView inherits Rectangle {
                                     VerticalLayout {
                                         Text {
                                             text: "Middle Name";
-                                            font-size: 14px;
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -151,7 +151,7 @@ export component UpdateView inherits Rectangle {
                                     VerticalLayout {
                                         Text {
                                             text: "Last Name";
-                                            font-size: 14px;
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -166,11 +166,11 @@ export component UpdateView inherits Rectangle {
 
                                 HorizontalBox {
 
-                                    spacing: 16px;
+                                    spacing: 3px;
                                     VerticalLayout {
                                         Text {
-                                            text: "First Name";
-                                            font-size: 14px;
+                                            text: "Email";
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -185,22 +185,21 @@ export component UpdateView inherits Rectangle {
                                     VerticalLayout {
                                         Text {
                                             text: "Lost Reason";
-                                            font-size: 14px;
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
 
-                                        lost := LineEdit {
+                                        lost := ComboBox {
                                             height: 40px;
-                                            placeholder-text: "Lost Reason";
-                                            text: TableData.active-relative.lost-reason;
+                                            model: ["N/A", "Rejected By Family", "Other"];
                                         }
                                     }
 
                                     VerticalLayout {
                                         Text {
                                             text: "Sameness";
-                                            font-size: 14px;
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -214,11 +213,11 @@ export component UpdateView inherits Rectangle {
                                 }
 
                                 HorizontalBox {
-                                    spacing: 16px;
+                                    spacing: 3px;
                                     VerticalLayout {
                                         Text {
                                             text: "Sex";
-                                            font-size: 14px;
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -234,7 +233,7 @@ export component UpdateView inherits Rectangle {
                                     VerticalLayout {
                                         Text {
                                             text: "Birthday";
-                                            font-size: 14px;
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -250,7 +249,7 @@ export component UpdateView inherits Rectangle {
                                     VerticalLayout {
                                         Text {
                                             text: "Phone";
-                                            font-size: 14px;
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -265,12 +264,12 @@ export component UpdateView inherits Rectangle {
                                 }
 
                                 HorizontalBox {
-                                    spacing: 16px;
+                                    spacing: 3px;
                                     alignment: center;
                                     if sex.current-value == "male": VerticalLayout {
                                         Text {
-                                            text: @tr("Employable | {}", e.value);
-                                            font-size: 14px;
+                                            text: @tr("Employable | {}", ceil(e.value));
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -282,15 +281,15 @@ export component UpdateView inherits Rectangle {
                                             height: 40px;
                                             value: TableData.active-relative.employable;
                                             changed(val) => {
-                                                employable = val;
+                                                employable = ceil(val);
                                             }
                                         }
                                     }
 
                                     if sex.current-value == "female": VerticalLayout {
                                         Text {
-                                            text: @tr("Hotness | {}", h.value);
-                                            font-size: 14px;
+                                            text: @tr("Hotness | {}", ceil(h.value));
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -303,15 +302,15 @@ export component UpdateView inherits Rectangle {
                                             value: TableData.active-relative.hotness;
                                             enabled: sex.current-value == sex.model[1];
                                             changed(val) => {
-                                                hotness = val;
+                                                hotness = ceil(val);
                                             }
                                         }
                                     }
 
                                     if sex.current-value == "female": VerticalLayout {
                                         Text {
-                                            text: @tr("Swarthy | {}", s.value);
-                                            font-size: 14px;
+                                            text: @tr("Swarthy | {}", ceil(s.value));
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -324,15 +323,15 @@ export component UpdateView inherits Rectangle {
                                             value: TableData.active-relative.swarthy;
                                             enabled: sex.current-value == sex.model[1];
                                             changed(val) => {
-                                                swarthy = val;
+                                                swarthy = ceil(val);
                                             }
                                         }
                                     }
 
                                     if sex.current-value == "female":VerticalLayout {
                                         Text {
-                                            text: @tr("Crazy | {}", c.value);
-                                            font-size: 14px;
+                                            text: @tr("Crazy | {}", ceil(c.value));
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -345,19 +344,18 @@ export component UpdateView inherits Rectangle {
                                             value: TableData.active-relative.crazy;
                                             enabled: sex.current-value == sex.model[1];
                                             changed(val) => {
-                                                crazy = val;
+                                                crazy = ceil(val);
                                             }
                                         }
                                     }
                                 }
 
                                 HorizontalBox {
-                                    spacing: 16px;
                                     alignment: space-around;
                                     VerticalLayout {
                                         Text {
                                             text: TableData.selected-mother-name != "" ? @tr("Update Mother | Current {}", TableData.selected-mother-name) : "Choose Mother";
-                                            font-size: 14px;
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -371,7 +369,7 @@ export component UpdateView inherits Rectangle {
                                     VerticalLayout {
                                         Text {
                                             text: TableData.selected-father-name != "" ? @tr("Update Father | Current {}", TableData.selected-father-name) : "Choose Father";
-                                            font-size: 14px;
+                                            font-size: 10px;
                                             color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
                                             font-weight: 500;
                                         }
@@ -411,7 +409,7 @@ export component UpdateView inherits Rectangle {
                                                 phone: phone.text,
                                                 email: email.text,
                                                 birthday: birthday.text,
-                                                lost-reason: lost.text,
+                                                lost-reason: lost.current-value,
                                                 sameness: sameness.text,
                                                 pinned: pinned,
                                                 hotness: hotness,

@@ -58,11 +58,21 @@ END;
 
 
 -- Calculate age after creating an individual
-CREATE TRIGGER calculate_age_after_insert
+CREATE TRIGGER IF NOT EXISTS calculate_age_after_insert
 AFTER INSERT ON relative
 BEGIN
     UPDATE relative
     SET age = CAST((julianday('now') - julianday(birthday)) / 365.25 AS INTEGER)
+    WHERE id = NEW.id;
+END;
+
+-- Calculate age after updating birthday
+CREATE TRIGGER IF NOT EXISTS calculate_age_after_update
+AFTER UPDATE OF birthday ON relative
+WHEN NEW.birthday != OLD.birthday
+BEGIN
+    UPDATE relative
+    SET age = CAST((julianday('now') - julianday(NEW.birthday)) / 365.25 AS INTEGER)
     WHERE id = NEW.id;
 END;
 

@@ -11,12 +11,13 @@ use std::{env, u64};
 
 mod repo;
 mod sql;
+mod utils;
 
 slint::include_modules!();
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut work_dir = String::from(std::format!(
+    /*let mut work_dir = String::from(std::format!(
         "{}/.geneapp",
         env::home_dir().unwrap().to_str().unwrap()
     ));
@@ -48,8 +49,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 files_dir = std::format!("{work_dir}/files");
             }
         }
-    }
+    }*/
 
+    let mut work_dir = String::from("app_data");
+
+    match fs::create_dir(work_dir.clone()) {
+        Ok(_) => {
+            println!("created work dir");
+        }
+        Err(e) => {
+            if e.kind() != io::ErrorKind::AlreadyExists {
+                println!("error: {}", e);
+                fs::create_dir("app_data").unwrap();
+                work_dir = ".geneapp".to_string();
+            } else {
+                println!("already exists");
+            }
+        }
+    }
+    let mut images_dir: String = std::format!("{work_dir}/images");
+    let mut files_dir: String = std::format!("{work_dir}/files");
+
+    match fs::create_dir(files_dir.clone()) {
+        Ok(()) => {}
+        Err(e) => {
+            if e.kind() != io::ErrorKind::AlreadyExists {
+                println!("error: {}", e);
+                fs::create_dir("{work_dir}/files").unwrap();
+                files_dir = std::format!("{work_dir}/files");
+            }
+        }
+    }
     match fs::create_dir(images_dir.clone()) {
         Ok(()) => {}
         Err(e) => {
@@ -98,6 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let app = Rc::new(app.as_weak());
         let males = repo::get_male_relatives(&pool).await?;
         let females2 = repo::get_mothers(&pool).await?;
+        let images_dir = images_dir.clone();
         move || {
             let update_window = UpdateWindow::new().unwrap();
             let check_svg =
@@ -112,21 +143,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             update_window
                 .global::<TableData>()
                 .set_check_image(check_svg);
-            update_window.global::<TableData>().on_send_close_request({
-                let weak_app = update_window.as_weak();
-                move || {
-                    println!("droping update window");
-                    if weak_app
-                        .unwrap()
-                        .global::<TableData>()
-                        .get_update_eror()
-                        .len()
-                        == 0
-                    {
-                        weak_app.unwrap().hide().unwrap();
-                    }
-                }
-            });
+            //update_window.global::<TableData>().on_send_close_request({
+            //    let weak_app = update_window.as_weak();
+            //    move || {
+            //        println!("droping update window");
+            //        if weak_app
+            //            .unwrap()
+            //            .global::<TableData>()
+            //            .get_update_eror()
+            //            .len()
+            //            == 0
+            //        {
+            //            weak_app.unwrap().hide().unwrap();
+            //        }
+            //    }
+            //});
 
             update_window.show().unwrap();
             //let update_window = Rc::new(update_window.as_weak());
@@ -452,133 +483,140 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     "No selected relative, click on one row.",
                                 ));
                         } else {
-                            if let Some(path) = FileDialog::new()
+                            if let Ok(path) = FileDialog::new()
                                 .set_location("~/Desktop")
                                 .add_filter("Image", &["jpg", "jpeg", "png"])
                                 .show_open_single_file()
-                                .unwrap()
                             {
                                 let images_dir = images_dir.clone();
-                                let _ = slint::spawn_local({
-                                    let pool = pool.clone();
-                                    if let Ok(_) = fs::copy(
-                                        path.to_str().unwrap(),
-                                        std::format!(
-                                            "{images_dir}/{id}-{}",
-                                            path.file_name().unwrap().to_str().unwrap().to_string()
-                                        ),
-                                    ) {
-                                    } else {
-                                        weak_update_window
-                                            .unwrap()
-                                            .global::<CrudMessages>()
-                                            .set_upload_image_error(SharedString::from(
-                                                "Can't add image",
-                                            ));
-                                        println!("error adding photo");
-                                        return;
-                                    };
-                                    async move {
-                                        match sqlx::query(&sql::add_image_for_relative())
-                                            .bind(std::format!(
+                                if let Some(path) = path {
+                                    let _ = slint::spawn_local({
+                                        let pool = pool.clone();
+                                        if let Ok(_) = fs::copy(
+                                            path.to_str().unwrap(),
+                                            std::format!(
                                                 "{images_dir}/{id}-{}",
                                                 path.file_name()
                                                     .unwrap()
                                                     .to_str()
                                                     .unwrap()
                                                     .to_string()
-                                            ))
-                                            .bind(id.to_string())
-                                            .execute(&pool)
-                                            .await
-                                        {
-                                            Ok(_) => {
-                                                let mut filename = String::new();
-                                                if let Ok(f) = sqlx::query(
-                                                    r#"
+                                            ),
+                                        ) {
+                                        } else {
+                                            weak_update_window
+                                                .unwrap()
+                                                .global::<CrudMessages>()
+                                                .set_upload_image_error(SharedString::from(
+                                                    "Can't add image",
+                                                ));
+                                            println!("error adding photo");
+                                            return;
+                                        };
+                                        async move {
+                                            match sqlx::query(&sql::add_image_for_relative())
+                                                .bind(std::format!(
+                                                    "{images_dir}/{id}-{}",
+                                                    path.file_name()
+                                                        .unwrap()
+                                                        .to_str()
+                                                        .unwrap()
+                                                        .to_string()
+                                                ))
+                                                .bind(id.to_string())
+                                                .execute(&pool)
+                                                .await
+                                            {
+                                                Ok(_) => {
+                                                    let mut filename = String::new();
+                                                    if let Ok(f) = sqlx::query(
+                                                        r#"
                                                 SELECT filename 
                                                 FROM image 
                                                 WHERE relative_id = $1
                                                 ORDER BY created_at DESC
                                                 LIMIT 1;
                                             "#,
-                                                )
-                                                .bind(id.clone().to_string())
-                                                .fetch_one(&pool)
-                                                .await
-                                                {
-                                                    filename = f
-                                                        .try_get("filename")
-                                                        .unwrap_or("".to_string());
-                                                }
-                                                println!("filename is: {filename}");
-                                                let image = slint::Image::load_from_path(
-                                                    std::path::Path::new(filename.as_str()),
-                                                );
-                                                match image {
-                                                    Ok(img) => {
-                                                        weak_update_window
-                                                            .unwrap()
-                                                            .global::<CrudMessages>()
-                                                            .set_upload_image_success(
-                                                                SharedString::from("Image Updated"),
-                                                            );
-                                                        weak_update_window
-                                                            .unwrap()
-                                                            .global::<TableData>()
-                                                            .set_active_profile_image(img);
-                                                        if let Ok(images) =
-                                                            repo::get_image_rows_for_relative(
-                                                                weak_update_window
-                                                                    .unwrap()
-                                                                    .global::<TableData>()
-                                                                    .get_active_relative()
-                                                                    .id
-                                                                    .to_string(),
-                                                                &pool,
-                                                            )
-                                                            .await
-                                                        {
-                                                            println!("got images ");
+                                                    )
+                                                    .bind(id.clone().to_string())
+                                                    .fetch_one(&pool)
+                                                    .await
+                                                    {
+                                                        filename = f
+                                                            .try_get("filename")
+                                                            .unwrap_or("".to_string());
+                                                    }
+                                                    println!("filename is: {filename}");
+                                                    let image = slint::Image::load_from_path(
+                                                        std::path::Path::new(filename.as_str()),
+                                                    );
+                                                    match image {
+                                                        Ok(img) => {
                                                             weak_update_window
+                                                                .unwrap()
+                                                                .global::<CrudMessages>()
+                                                                .set_upload_image_success(
+                                                                    SharedString::from(
+                                                                        "Image Updated",
+                                                                    ),
+                                                                );
+                                                            weak_update_window
+                                                                .unwrap()
+                                                                .global::<TableData>()
+                                                                .set_active_profile_image(img);
+                                                            if let Ok(images) =
+                                                                repo::get_image_rows_for_relative(
+                                                                    weak_update_window
+                                                                        .unwrap()
+                                                                        .global::<TableData>()
+                                                                        .get_active_relative()
+                                                                        .id
+                                                                        .to_string(),
+                                                                    &pool,
+                                                                )
+                                                                .await
+                                                            {
+                                                                println!("got images ");
+                                                                weak_update_window
                                                             .unwrap()
                                                             .global::<TableData>()
                                                             .set_images_rows_for_active_relative(
                                                             images.into(),
                                                     );
-                                                        } else {
-                                                            println!("got no images");
+                                                            } else {
+                                                                println!("got no images");
+                                                            }
+                                                        }
+                                                        Err(e) => {
+                                                            println!(
+                                                                "error loading emage: {}",
+                                                                e.to_string()
+                                                            );
+                                                            weak_update_window
+                                                                .unwrap()
+                                                                .global::<CrudMessages>()
+                                                                .set_upload_image_error(
+                                                                    slint::format!(
+                                                                        "error loading image: {}",
+                                                                        e.to_string()
+                                                                    ),
+                                                                );
                                                         }
                                                     }
-                                                    Err(e) => {
-                                                        println!(
-                                                            "error loading emage: {}",
-                                                            e.to_string()
+                                                }
+                                                Err(e) => {
+                                                    println!("error: {}", e.to_string());
+                                                    weak_update_window
+                                                        .unwrap()
+                                                        .global::<CrudMessages>()
+                                                        .set_upload_image_error(
+                                                            SharedString::from("Can't add image"),
                                                         );
-                                                        weak_update_window
-                                                            .unwrap()
-                                                            .global::<CrudMessages>()
-                                                            .set_upload_image_error(
-                                                                slint::format!(
-                                                                    "error loading image: {}",
-                                                                    e.to_string()
-                                                                ),
-                                                            );
-                                                    }
                                                 }
                                             }
-                                            Err(e) => {
-                                                println!("error: {}", e.to_string());
-                                                weak_update_window
-                                                    .unwrap()
-                                                    .global::<CrudMessages>()
-                                                    .set_upload_image_error(SharedString::from(
-                                                        "Can't add image",
-                                                    ));
-                                            }
                                         }
-                                    }
-                                });
+                                    });
+                                }
                             }
                         }
                     }
@@ -589,15 +627,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     app.global::<TableData>().on_show_add_window({
         let pool = pool.clone();
         let app = Rc::new(app.as_weak());
+        let images_dir = Rc::new(images_dir.clone());
         move || {
             let _ = slint::spawn_local({
                 let pool = pool.clone();
                 let app = Rc::clone(&app);
+                let images_dir = Rc::clone(&images_dir);
                 async move {
                     let females = repo::get_female_relatives(&pool).await.unwrap();
                     let males = repo::get_male_relatives(&pool).await.unwrap();
                     let females2 = repo::get_mothers(&pool).await.unwrap();
                     let create_window = CreateWindow::new().unwrap();
+
+                    let images_dir = Rc::clone(&images_dir);
                     let check_svg = slint::Image::load_from_path(std::path::Path::new(
                         "assets/icons/check-circle.svg",
                     ))
@@ -606,7 +648,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         "assets/icons/x-circle.svg",
                     ))
                     .unwrap();
-                    create_window.global::<TableData>().on_send_close_request({
+                    /*create_window.global::<TableData>().on_send_close_request({
                         let weak_app = Rc::new(create_window.as_weak());
                         move || {
                             if weak_app
@@ -620,6 +662,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
                     });
+                    */
+
+                    create_window
+                        .global::<TableData>()
+                        .on_chose_temporary_image({
+                            let weak_app = Rc::new(create_window.as_weak());
+                            move || {
+                                if let Ok(path) = FileDialog::new()
+                                    .set_location("~/Desktop")
+                                    .add_filter("Image", &["jpg", "jpeg", "png"])
+                                    .show_open_single_file()
+                                {
+                                    if let Some(path) = path {
+                                        if let Ok(image) =
+                                            slint::Image::load_from_path(path.as_path())
+                                        {
+                                            weak_app
+                                                .unwrap()
+                                                .global::<TableData>()
+                                                .set_temporary_image(image);
+                                            weak_app
+                                                .unwrap()
+                                                .global::<TableData>()
+                                                .set_temporary_image_path(
+                                                    path.as_path().to_str().unwrap().into(),
+                                                );
+                                        }
+                                    }
+                                }
+                            }
+                        });
                     create_window
                         .global::<TableData>()
                         .set_cross_image(cross_svg);
@@ -636,28 +709,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .global::<TableData>()
                         .set_females2(females2.clone().into());
                     let _ = create_window.show();
-                    let create_window = Rc::new(create_window.as_weak());
                     let pool = pool.clone();
                     let app = app.clone();
-                    create_window
-                        .unwrap()
-                        .global::<TableData>()
-                        .on_create_new_relative({
-                            let weak_app = Rc::clone(&create_window);
-                            let pool = pool.clone();
-                            let app = Rc::clone(&app);
-                            move |relative, mother_name, father_name| {
-                                println!("mothe_name {mother_name} father name {father_name}");
-                                create_relative(
-                                    relative,
-                                    pool.clone(),
-                                    father_name.to_string(),
-                                    mother_name.to_string(),
-                                    weak_app.clone(),
-                                    Rc::clone(&app),
-                                );
-                            }
-                        });
+                    create_window.global::<TableData>().on_create_new_relative({
+                        let weak_app = Rc::new(create_window.as_weak());
+                        let pool = pool.clone();
+                        let app = Rc::clone(&app);
+                        let images_dir = Rc::clone(&images_dir);
+                        move |relative, mother_name, father_name| {
+                            create_relative(
+                                relative,
+                                pool.clone(),
+                                father_name.to_string(),
+                                mother_name.to_string(),
+                                weak_app.clone(),
+                                Rc::clone(&app),
+                                images_dir.clone(),
+                            );
+                        }
+                    });
                 }
             });
         }
@@ -1484,19 +1554,20 @@ async fn get_relative_data(
     let pinned: bool = row.get("pinned");
     let sameness: f32 = row.try_get("sameness").unwrap_or(0.0);
     let sex: String = row.get("sex");
-    let hotness: f32 = row.try_get("hotness").unwrap_or(0.0);
-    let crazy: f32 = row.get("crazy");
-    let swarthy: f32 = row.get("swarthy");
-    let employable: f32 = row.get("employable");
+    let hotness: i32 = row.try_get("hotness").unwrap_or(0);
+    let crazy: i32 = row.get("crazy");
+    let swarthy: i32 = row.get("swarthy");
+    let employable: i32 = row.get("employable");
     let mother_id: i32 = row.get("mother_id");
     let father_id: i32 = row.get("father_id");
+    let date = utils::from_sqlite_to_date(birthday);
 
     let relative = Relative {
         id: slint::format!("{id}"),
         first_name: fname.into(),
         last_name: lname.into(),
         middle_name: mname.into(),
-        birthday: birthday.into(),
+        birthday: date.into(),
         email: email.into(),
         lost_reason: lost_reason.into(),
         phone: phone.into(),
@@ -1504,10 +1575,10 @@ async fn get_relative_data(
         sameness: slint::format!("{}", sameness),
         sex: sex.into(),
         note: "".into(),
-        hotness: hotness as f32,
-        crazy: crazy as f32,
-        swarthy: swarthy as f32,
-        employable: employable as f32,
+        hotness,
+        crazy,
+        swarthy,
+        employable,
         mother_id,
         father_id,
     };
@@ -1529,6 +1600,43 @@ fn update_relative(
         async move {
             let mut mother_id_db = 0;
             let mut father_id_db = 0;
+            if relative.email.len() > 0 && !utils::is_valid_email(&relative.email.to_string()) {
+                update_weak_window
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_update_eror(SharedString::from("Invalid Email Adress"));
+                return;
+            }
+
+            if relative.phone.len() > 0 && !utils::is_valid_phone(&relative.phone.to_string()) {
+                update_weak_window
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_update_eror(SharedString::from("Invalid Phone Number"));
+                return;
+            }
+
+            if !utils::is_valid_date(&relative.birthday.to_string()) {
+                update_weak_window
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_update_eror(SharedString::from("Invalid Date"));
+                return;
+            }
+            let mut sqlite_date = String::new();
+            match utils::sqlite_date(relative.birthday.to_string()) {
+                Ok(date) => {
+                    sqlite_date = date;
+                }
+                Err(_) => {
+                    update_weak_window
+                        .unwrap()
+                        .global::<TableData>()
+                        .set_update_eror(SharedString::from("Invalid Date"));
+                    drop(sqlite_date);
+                    return;
+                }
+            }
 
             if let Ok(m_row) = sqlx::query("select id from relative where full_name = $1")
                 .bind(mother_name)
@@ -1551,7 +1659,7 @@ fn update_relative(
                     .bind(relative.sameness.to_string())
                     .bind(relative.lost_reason.to_string())
                     .bind(relative.sex.to_string())
-                    .bind(relative.birthday.to_string())
+                    .bind(sqlite_date.clone())
                     .bind(relative.first_name.to_string())
                     .bind(relative.middle_name.to_string())
                     .bind(relative.last_name.to_string())
@@ -1597,7 +1705,7 @@ fn update_relative(
                     .bind(relative.sameness.to_string())
                     .bind(relative.lost_reason.to_string())
                     .bind(relative.sex.to_string())
-                    .bind(relative.birthday.to_string())
+                    .bind(sqlite_date.clone())
                     .bind(relative.first_name.to_string())
                     .bind(relative.middle_name.to_string())
                     .bind(relative.last_name.to_string())
@@ -1622,12 +1730,13 @@ fn update_relative(
                                 let _ = update_global_data(pool, app).await;
                             }
                         });
-                        weak_update_window
-                            .unwrap()
-                            .global::<TableData>()
-                            .set_update_success(SharedString::from(
-                                "Updated, You can close this window!",
-                            ));
+                        //weak_update_window
+                        //    .unwrap()
+                        //    .global::<TableData>()
+                        //    .set_update_success(SharedString::from(
+                        //        "Updated, You can close this window!",
+                        //    ));
+                        weak_update_window.unwrap().hide().unwrap();
                     }
                     Err(e) => {
                         update_weak_window
@@ -1642,7 +1751,7 @@ fn update_relative(
                     .bind(relative.sameness.to_string())
                     .bind(relative.lost_reason.to_string())
                     .bind(relative.sex.to_string())
-                    .bind(relative.birthday.to_string())
+                    .bind(sqlite_date.clone())
                     .bind(relative.first_name.to_string())
                     .bind(relative.middle_name.to_string())
                     .bind(relative.last_name.to_string())
@@ -1667,12 +1776,13 @@ fn update_relative(
                                 let _ = update_global_data(pool, app).await;
                             }
                         });
-                        weak_update_window
-                            .unwrap()
-                            .global::<TableData>()
-                            .set_update_success(SharedString::from(
-                                "Updated, You can close this window!",
-                            ));
+                        //weak_update_window
+                        //    .unwrap()
+                        //    .global::<TableData>()
+                        //    .set_update_success(SharedString::from(
+                        //        "Updated, You can close this window!",
+                        //    ));
+                        weak_update_window.unwrap().hide().unwrap();
                     }
                     Err(e) => {
                         update_weak_window
@@ -1687,7 +1797,7 @@ fn update_relative(
                     .bind(relative.sameness.to_string())
                     .bind(relative.lost_reason.to_string())
                     .bind(relative.sex.to_string())
-                    .bind(relative.birthday.to_string())
+                    .bind(sqlite_date.clone())
                     .bind(relative.first_name.to_string())
                     .bind(relative.middle_name.to_string())
                     .bind(relative.last_name.to_string())
@@ -1711,12 +1821,13 @@ fn update_relative(
                                 let _ = update_global_data(pool, app).await;
                             }
                         });
-                        weak_update_window
-                            .unwrap()
-                            .global::<TableData>()
-                            .set_update_success(SharedString::from(
-                                "Updated, You can close this window!",
-                            ));
+                        //weak_update_window
+                        //    .unwrap()
+                        //    .global::<TableData>()
+                        //    .set_update_success(SharedString::from(
+                        //        "Updated, You can close this window!",
+                        //    ));
+                        weak_update_window.unwrap().hide().unwrap();
                     }
                     Err(e) => {
                         update_weak_window
@@ -1739,6 +1850,7 @@ fn create_relative(
     selected_mother_name: String,
     weak_create_window: Rc<slint::Weak<CreateWindow>>,
     app: Rc<slint::Weak<Main>>,
+    image_dir: Rc<String>,
 ) {
     let pool = pool.clone();
     let weak_create_window = weak_create_window.clone();
@@ -1747,6 +1859,44 @@ fn create_relative(
         let pool = pool.clone();
         let app = Rc::clone(&app);
         async move {
+            if relative.email.len() > 0 && !utils::is_valid_email(&relative.email.to_string()) {
+                weak_create_window
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_create_error(SharedString::from("Invalid Email Adress"));
+                return;
+            }
+
+            if relative.phone.len() > 0 && !utils::is_valid_phone(&relative.phone.to_string()) {
+                weak_create_window
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_create_error(SharedString::from("Invalid Phone Number"));
+                return;
+            }
+
+            if !utils::is_valid_date(&relative.birthday.to_string()) {
+                weak_create_window
+                    .unwrap()
+                    .global::<TableData>()
+                    .set_create_error(SharedString::from("Invalid Date"));
+                return;
+            }
+            let mut sqlite_date = String::new();
+            match utils::sqlite_date(relative.birthday.to_string()) {
+                Ok(date) => {
+                    sqlite_date = date;
+                }
+                Err(_) => {
+                    weak_create_window
+                        .unwrap()
+                        .global::<TableData>()
+                        .set_create_error(SharedString::from("Invalid Date"));
+                    drop(sqlite_date);
+                    return;
+                }
+            }
+
             let pool = pool.clone();
             let mut mother_id_db = 0;
             let mut father_id_db = 0;
@@ -1771,7 +1921,7 @@ fn create_relative(
                     .bind(relative.sameness.to_string())
                     .bind(relative.lost_reason.to_string())
                     .bind(relative.sex.to_string())
-                    .bind(relative.birthday.to_string())
+                    .bind(sqlite_date.clone())
                     .bind(relative.first_name.to_string())
                     .bind(relative.middle_name.to_string())
                     .bind(relative.last_name.to_string())
@@ -1784,10 +1934,10 @@ fn create_relative(
                     .bind(relative.swarthy.to_string())
                     .bind(relative.hotness.to_string())
                     .bind(relative.crazy.to_string())
-                    .execute(&pool)
+                    .fetch_one(&pool)
                     .await;
                 match res {
-                    Ok(_) => {
+                    Ok(row) => {
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = Rc::clone(&app);
@@ -1796,13 +1946,28 @@ fn create_relative(
                             }
                         });
                         println!("created Successfully");
-
-                        weak_create_window
+                        let id: u32 = row.get("id");
+                        println!("created id= {id}");
+                        let image_path = weak_create_window
                             .unwrap()
                             .global::<TableData>()
-                            .set_create_success(SharedString::from(
-                                "Created Successfully. You can Close this window",
-                            ));
+                            .get_temporary_image_path()
+                            .to_string();
+                        println!("path global {image_path}");
+                        let file_path = std::path::Path::new(&image_path);
+                        if let Some(fname) = file_path.file_name() {
+                            if let Some(name) = fname.to_str() {
+                                println!("file name is: {name}");
+                            }
+                        }
+
+                        //weak_create_window
+                        //    .unwrap()
+                        //    .global::<TableData>()
+                        //    .set_create_success(SharedString::from(
+                        //        "Created Successfully. You can Close this window",
+                        //    ));
+                        weak_create_window.unwrap().hide().unwrap();
                     }
                     Err(e) => {
                         println!("error: {e}");
@@ -1818,7 +1983,7 @@ fn create_relative(
                     .bind(relative.sameness.to_string())
                     .bind(relative.lost_reason.to_string())
                     .bind(relative.sex.to_string())
-                    .bind(relative.birthday.to_string())
+                    .bind(sqlite_date.clone())
                     .bind(relative.first_name.to_string())
                     .bind(relative.middle_name.to_string())
                     .bind(relative.last_name.to_string())
@@ -1830,10 +1995,10 @@ fn create_relative(
                     .bind(relative.swarthy.to_string())
                     .bind(relative.hotness.to_string())
                     .bind(relative.crazy.to_string())
-                    .execute(&pool)
+                    .fetch_one(&pool)
                     .await;
                 match res {
-                    Ok(_) => {
+                    Ok(row) => {
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = Rc::clone(&app);
@@ -1841,12 +2006,22 @@ fn create_relative(
                                 let _ = update_global_data(pool, app).await;
                             }
                         });
-                        weak_create_window
+                        println!("created Successfully");
+                        let id: u32 = row.get("id");
+                        println!("created id= {id}");
+                        let image_path = weak_create_window
                             .unwrap()
                             .global::<TableData>()
-                            .set_create_success(SharedString::from(
-                                "Created Successfully. You can Close this window",
-                            ));
+                            .get_temporary_image_path();
+                        println!("image path: {image_path}");
+
+                        //weak_create_window
+                        //    .unwrap()
+                        //    .global::<TableData>()
+                        //    .set_create_success(SharedString::from(
+                        //        "Created Successfully. You can Close this window",
+                        //    ));
+                        weak_create_window.unwrap().hide().unwrap();
                     }
                     Err(e) => {
                         println!("error: {e}");
@@ -1862,7 +2037,7 @@ fn create_relative(
                     .bind(relative.sameness.to_string())
                     .bind(relative.lost_reason.to_string())
                     .bind(relative.sex.to_string())
-                    .bind(relative.birthday.to_string())
+                    .bind(sqlite_date.clone())
                     .bind(relative.first_name.to_string())
                     .bind(relative.middle_name.to_string())
                     .bind(relative.last_name.to_string())
@@ -1874,10 +2049,10 @@ fn create_relative(
                     .bind(relative.swarthy.to_string())
                     .bind(relative.hotness.to_string())
                     .bind(relative.crazy.to_string())
-                    .execute(&pool)
+                    .fetch_one(&pool)
                     .await;
                 match res {
-                    Ok(_) => {
+                    Ok(row) => {
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = Rc::clone(&app);
@@ -1885,12 +2060,22 @@ fn create_relative(
                                 let _ = update_global_data(pool, app).await;
                             }
                         });
-                        weak_create_window
+                        println!("created Successfully");
+                        let id: u32 = row.get("id");
+                        println!("created id= {id}");
+                        let image_path = weak_create_window
                             .unwrap()
                             .global::<TableData>()
-                            .set_create_success(SharedString::from(
-                                "Created Successfully. You can Close this window",
-                            ));
+                            .get_temporary_image_path();
+                        println!("image path: {image_path}");
+
+                        //weak_create_window
+                        //    .unwrap()
+                        //    .global::<TableData>()
+                        //    .set_create_success(SharedString::from(
+                        //        "Created Successfully. You can Close this window",
+                        //    ));
+                        weak_create_window.unwrap().hide().unwrap();
                     }
                     Err(e) => {
                         println!("error: {e}");
@@ -1902,11 +2087,12 @@ fn create_relative(
                 }
             } else if mother_id_db <= 0 && father_id_db <= 0 {
                 // create relative with no parents
+            
                 let res = sqlx::query(&sql::create_new_relative_no_parents())
                     .bind(relative.sameness.to_string())
                     .bind(relative.lost_reason.to_string())
                     .bind(relative.sex.to_string())
-                    .bind(relative.birthday.to_string())
+                    .bind(sqlite_date.clone())
                     .bind(relative.first_name.to_string())
                     .bind(relative.middle_name.to_string())
                     .bind(relative.last_name.to_string())
@@ -1917,10 +2103,10 @@ fn create_relative(
                     .bind(relative.swarthy.to_string())
                     .bind(relative.hotness.to_string())
                     .bind(relative.crazy.to_string())
-                    .execute(&pool)
+                    .fetch_one(&pool)
                     .await;
                 match res {
-                    Ok(_) => {
+                    Ok(row) => {
                         let _ = slint::spawn_local({
                             let pool = pool.clone();
                             let app = Rc::clone(&app);
@@ -1928,12 +2114,51 @@ fn create_relative(
                                 let _ = update_global_data(pool, app).await;
                             }
                         });
-                        weak_create_window
+                        println!("created Successfully");
+                        let id: u32 = row.get("id");
+                        println!("created id= {id}");
+                        let image_path = weak_create_window
                             .unwrap()
                             .global::<TableData>()
-                            .set_create_success(SharedString::from(
-                                "Created Successfully. You can Close this window",
-                            ));
+                            .get_temporary_image_path()
+                            .to_string();
+                        println!("path global {image_path}");
+                        let file_path = std::path::PathBuf::from(&std::format!("{image_path}"));
+
+                        if let Some(name) = file_path.file_name().and_then(|fname| fname.to_str()) {
+                            println!("file name is: {name}");
+                            let dest_path =
+                                std::path::PathBuf::from(&std::format!("{image_dir}/{name}"));
+
+                            if fs::copy(&file_path, &dest_path).is_ok() {
+                                let _ = slint::spawn_local({
+                                    let query = r#"INSERT INTO image (filename, relative_id) VALUES ($1, $2)"#;
+                                    let dest_path_str = dest_path.to_string_lossy().to_string();
+                                    async move {
+                                        let res = sqlx::query(query)
+                                            .bind(dest_path_str)
+                                            .bind(id)
+                                            .execute(&pool)
+                                            .await;
+                                        match res {
+                                            Ok(_) => {
+                                                println!("saved");
+                                            }
+                                            Err(e) => {
+                                                println!("{e}");
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                        //weak_create_window
+                        //    .unwrap()
+                        //    .global::<TableData>()
+                        //    .set_create_success(SharedString::from(
+                        //        "Created Successfully. You can Close this window",
+                        //    ));
+                        weak_create_window.unwrap().hide().unwrap();
                     }
                     Err(e) => {
                         println!("error: {e}");

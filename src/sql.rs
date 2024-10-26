@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub fn create_tables() -> String {
     let query = r#"
 
@@ -22,10 +24,10 @@ CREATE TABLE IF NOT EXISTS relative (
     father_id       INTEGER,
     end_of_line     BOOLEAN DEFAULT 1,
     pinned          BOOLEAN DEFAULT 0,
-    hotness         FLOAT DEFAULT 0.0,
-    crazy           FLOAT DEFAULT 0.0,
-    swarthy         FLOAT DEFAULT 0.0,
-    employable      FLOAT DEFAULT 0.0,
+    hotness         INTEGER DEFAULT 0,
+    crazy           INTEGER DEFAULT 0,
+    swarthy         INTEGER DEFAULT 0,
+    employable      INTEGER DEFAULT 0,
     FOREIGN KEY (mother_id) REFERENCES relative(id),
     FOREIGN KEY (father_id) REFERENCES relative(id)
 );
@@ -66,6 +68,16 @@ AFTER INSERT ON relative
 BEGIN
     UPDATE relative
     SET age = CAST((julianday('now') - julianday(birthday)) / 365.25 AS INTEGER)
+    WHERE id = NEW.id;
+END;
+
+-- Calculate age after updating birthday
+CREATE TRIGGER IF NOT EXISTS calculate_age_after_update
+AFTER UPDATE OF birthday ON relative
+WHEN NEW.birthday != OLD.birthday
+BEGIN
+    UPDATE relative
+    SET age = CAST((julianday('now') - julianday(NEW.birthday)) / 365.25 AS INTEGER)
     WHERE id = NEW.id;
 END;
 
@@ -144,6 +156,7 @@ pub fn create_new_relative_no_parents() -> String {
             (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, employable, swarthy, hotness, crazy)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        RETURNING id
         "#;
     query.to_string()
 }
@@ -151,9 +164,25 @@ pub fn create_new_relative_no_parents() -> String {
 pub fn create_new_relative_with_mother_only() -> String {
     let query = r#"
         INSERT INTO relative 
-            (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, mother_id, employable, swarthy, hotness, crazy)
-    VALUES
+            (
+            sameness, 
+            lost_reason, 
+            sex, 
+            birthday, 
+            fname, 
+            mname, 
+            lname, 
+            phone, 
+            email, 
+            pinned, 
+            mother_id, 
+            employable, 
+            swarthy, 
+            hotness, 
+            crazy)
+        VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        RETURNING id
         "#;
     query.to_string()
 }
@@ -161,9 +190,24 @@ pub fn create_new_relative_with_mother_only() -> String {
 pub fn create_new_relative_with_father_only() -> String {
     let query = r#"
         INSERT INTO relative 
-            (sameness, lost_reason, sex, birthday, fname, mname, lname, phone, email, pinned, father_id, employable, swarthy, hotness, crazy)
+            (sameness, 
+            lost_reason, 
+            sex, 
+            birthday, 
+            fname, 
+            mname, 
+            lname, 
+            phone, 
+            email, 
+            pinned, 
+            father_id, 
+            employable, 
+            swarthy, 
+            hotness, 
+            crazy)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        RETURNING id
 "#;
     query.to_string()
 }
@@ -189,6 +233,7 @@ pub fn create_new_relative_with_both_parents() -> String {
             crazy)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING id
 "#;
     query.to_string()
 }
@@ -228,8 +273,7 @@ pub fn get_female_relatives() -> String {
         WHERE
             LOWER(sex) = LOWER('female')
         ORDER BY
-            pinned
-        DESC
+            pinned DESC
         ;
     "#;
 
@@ -397,6 +441,7 @@ pub fn get_males() -> String {
             relative
         WHERE
             LOWER(sex) = LOWER('male')
+            AND age > 13
         ORDER BY
             pinned
         DESC

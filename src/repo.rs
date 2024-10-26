@@ -27,7 +27,23 @@ pub async fn get_mothers(
     pool: &SqlitePool,
 ) -> Result<Rc<VecModel<SharedString>>, Box<dyn std::error::Error>> {
     let names = Rc::new(VecModel::default());
-    let rows = sqlx::query(&sql::get_females()).fetch_all(pool).await?;
+    let rows = sqlx::query(
+        "
+        SELECT 
+            full_name
+        FROM 
+            relative
+        WHERE
+            LOWER(sex) = LOWER('female')
+            AND age > 13
+        ORDER BY
+            pinned
+        DESC
+
+        ",
+    )
+    .fetch_all(pool)
+    .await?;
     names.push(SharedString::from("<None>"));
     for row in rows {
         let name: String = row.get("full_name");
@@ -59,7 +75,7 @@ pub async fn get_all_employees(
         let pinned: bool = row.try_get("pinned").unwrap_or(false);
         let create_at: String = row.try_get("created_at").unwrap_or("null".into());
         let updated_at: String = row.try_get("updated_at").unwrap_or("null".into());
-        let employable: f32 = row.try_get("employable").unwrap_or(0.0);
+        let employable: i32 = row.try_get("employable").unwrap_or(0);
 
         let mquery = "select full_name from relative where id=$1";
         let fquery = "select full_name from relative where id=$1";
@@ -171,9 +187,9 @@ pub async fn get_female_relatives(
         let pinned: bool = row.try_get("pinned").unwrap_or(false);
         let create_at: String = row.try_get("created_at").unwrap_or("null".into());
         let updated_at: String = row.try_get("updated_at").unwrap_or("null".into());
-        let swarthy: f32 = row.try_get("swarthy").unwrap_or(0.0);
-        let hotness: f32 = row.try_get("hotness").unwrap_or(0.0);
-        let crazy: f32 = row.try_get("crazy").unwrap_or(0.0);
+        let swarthy: i32 = row.try_get("swarthy").unwrap_or(0);
+        let hotness: i32 = row.try_get("hotness").unwrap_or(0);
+        let crazy: i32 = row.try_get("crazy").unwrap_or(0);
 
         let mquery = "SELECT full_name FROM relative WHERE id=$1";
         let fquery = "SELECT full_name FROM relative WHERE id=$1";

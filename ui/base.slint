@@ -38,6 +38,24 @@ export component Main inherits Window {
     min-width: 1280px;
     min-height: 720px;
     title: "Genealogy App";
+
+    about-panel := PopupWindow {
+        width: 200px;
+        height: 200px;
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        Rectangle {
+            height: 200px;
+            width: 200px;
+            HorizontalLayout {
+                alignment: center;
+                Text {
+                    text: "GenApp 0.1";
+                }
+            }
+        }
+    }
+
     note-pop-up := PopupWindow {
         width: root.width * 40%;
         height: root.height * 40%;
@@ -129,6 +147,9 @@ export component Main inherits Window {
                     Button {
                         text: "About";
                         height: 36px;
+                        clicked => {
+                            about-panel.show()
+                        }
                     }
 
                     Switch {
