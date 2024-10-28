@@ -23,6 +23,7 @@ CREATE TABLE relative (
     crazy           FLOAT DEFAULT 0.0,
     swarthy         FLOAT DEFAULT 0.0,
     employable      FLOAT DEFAULT 0.0,
+    default_image_id   INTEGER;
     FOREIGN KEY (mother_id) REFERENCES relative(id),
     FOREIGN KEY (father_id) REFERENCES relative(id)
 );

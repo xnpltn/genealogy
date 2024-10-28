@@ -143,6 +143,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             update_window
                 .global::<TableData>()
                 .set_check_image(check_svg);
+
+            let _ = slint::spawn_local({
+                let pool = pool.clone();
+                let update_weak_window = Rc::new(update_window.as_weak());
+                async move {
+                    let males = repo::get_male_relatives(&pool).await.unwrap();
+                    let females2 = repo::get_mothers(&pool).await.unwrap();
+                    update_weak_window.unwrap().global::<TableData>().set_females2(females2.into());
+                    update_weak_window.unwrap().global::<TableData>().set_males(males.into());
+                }
+            });
             //update_window.global::<TableData>().on_send_close_request({
             //    let weak_app = update_window.as_weak();
             //    move || {
@@ -189,6 +200,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 async move {
                     let mut filename = String::new();
                     if let Ok(f) = sqlx::query(
+                        r#"
+                            SELECT default_image_id FROM  relative WHERE id=$1;
+                        "#,
+                    )
+                    .bind(id.clone().to_string())
+                    .fetch_one(&pool)
+                    .await
+                    {
+                        let image_id: i32 = f.get("default_image_id");
+                        println!("id  default is: {image_id}");
+                        if image_id  > 0{
+                            match sqlx::query("SELECT filename FROM image WHERE id=$1").bind(image_id).fetch_one(&pool).await{
+                                Ok(r)=> {
+                                    
+                                    filename = r.get("filename");
+                                },
+                                Err(e)=>{
+                                    println!("err getting filename: {e}");
+                                }
+
+                        }
+                        }
+                    }
+                       else if let Ok(f) = sqlx::query(
                         r#"
                                                 SELECT filename 
                                                 FROM image 
@@ -240,6 +275,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .global::<TableData>()
                 .on_current_image_row_change({
                     let weak_app = Rc::new(update_window.as_weak());
+                    let pool = pool.clone();
                     move |row| {
                         let table_data = weak_app
                             .unwrap()
@@ -257,11 +293,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .unwrap()
                                 .global::<TableData>()
                                 .set_active_profile_image(image);
-                            //let _ = slint::spawn_local({
-                            //    let weak_app = Rc::clone(&weak_app);
-                            //
-                            //    async move {}
-                            //});
+                            let _ = slint::spawn_local({
+                                let weak_app = Rc::clone(&weak_app);
+                                let pool = pool.clone();
+                                let active_rel = weak_app
+                                    .unwrap()
+                                    .global::<TableData>()
+                                    .get_active_relative();
+
+                                async move {
+                                    match sqlx::query("
+                                        UPDATE relative 
+                                        SET default_image_id = (SELECT id FROM image WHERE filename = $1)
+                                        WHERE id = $2
+                                            ")
+                                        .bind(filename.clone().text.to_string())
+                                        .bind(active_rel.id.to_string())
+                                        .execute(&pool)
+                                        .await{
+                                        Ok(_)=>{println!(" saved default_image_id");},
+                                        Err(e)=>{println!("error occured while setting default image {e}");}
+                                    }
+                                }
+                            });
                         }
                     }
                 });
@@ -1685,12 +1739,13 @@ fn update_relative(
                                 let _ = update_global_data(pool, Rc::clone(&app)).await;
                             }
                         });
-                        weak_update_window
-                            .unwrap()
-                            .global::<TableData>()
-                            .set_update_success(SharedString::from(
-                                "Updated, You can close this window!",
-                            ));
+                        //weak_update_window
+                        //    .unwrap()
+                        //    .global::<TableData>()
+                        //    .set_update_success(SharedString::from(
+                        //        "Updated, You can close this window!",
+                        //    ));
+                        weak_update_window.unwrap().hide().unwrap();
                     }
                     Err(e) => {
                         update_weak_window
@@ -1792,7 +1847,7 @@ fn update_relative(
                     }
                 }
             } else if father_id_db <= 0 && mother_id_db <= 0 {
-                // update no parent id
+                // update no parents
                 let res = sqlx::query(&sql::update_no_parents())
                     .bind(relative.sameness.to_string())
                     .bind(relative.lost_reason.to_string())
@@ -2087,7 +2142,7 @@ fn create_relative(
                 }
             } else if mother_id_db <= 0 && father_id_db <= 0 {
                 // create relative with no parents
-            
+
                 let res = sqlx::query(&sql::create_new_relative_no_parents())
                     .bind(relative.sameness.to_string())
                     .bind(relative.lost_reason.to_string())

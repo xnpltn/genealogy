@@ -100,7 +100,11 @@ pub async fn get_all_employees(
         items.push(slint::format!("{father}").into());
         items.push(slint::format!("{phone}").into());
         items.push(slint::format!("{email}").into());
-        items.push(slint::format!("{pinned}").into());
+        if pinned {
+            items.push(slint::format!("√").into());
+        } else {
+            items.push(slint::format!("").into());
+        }
         items.push(slint::format!("{lost_reason}").into());
         items.push(slint::format!("{employable}").into());
         items.push(slint::format!("{create_at}").into());
@@ -156,7 +160,11 @@ pub async fn get_all_relative(
         items.push(slint::format!("{father}").into());
         items.push(slint::format!("{phone}").into());
         items.push(slint::format!("{email}").into());
-        items.push(slint::format!("{pinned}").into());
+        if pinned {
+            items.push(slint::format!("√").into());
+        } else {
+            items.push(slint::format!("").into());
+        }
         items.push(slint::format!("{lost_reason}").into());
         items.push(slint::format!("{create_at}").into());
         items.push(slint::format!("{updated_at}").into());
@@ -214,7 +222,11 @@ pub async fn get_female_relatives(
         items.push(slint::format!("{father}").into());
         items.push(slint::format!("{phone}").into());
         items.push(slint::format!("{email}").into());
-        items.push(slint::format!("{pinned}").into());
+        if pinned {
+            items.push(slint::format!("√").into());
+        } else {
+            items.push(slint::format!("").into());
+        }
         items.push(slint::format!("{hotness}").into());
         items.push(slint::format!("{swarthy}").into());
         items.push(slint::format!("{crazy}").into());
@@ -425,7 +437,11 @@ pub async fn get_notes_rows_for_relative(
 
         items.push(slint::format!("{id}").into());
         items.push(slint::format!("{text}").into());
-        items.push(slint::format!("{pinned}").into());
+        if pinned {
+            items.push(slint::format!("√").into());
+        } else {
+            items.push(slint::format!("").into());
+        }
         items.push(slint::format!("{updated_at}").into());
         notes.push(items.into());
     }
@@ -455,7 +471,11 @@ pub async fn get_files_rows_for_relative(
         items.push(slint::format!("{id}").into());
         items.push(slint::format!("{filename}").into());
         items.push(slint::format!("{file_type}").into());
-        items.push(slint::format!("{pinned}").into());
+        if pinned {
+            items.push(slint::format!("√").into());
+        } else {
+            items.push(slint::format!("").into());
+        }
         items.push(slint::format!("{create_at}").into());
         notes.push(items.into());
     }

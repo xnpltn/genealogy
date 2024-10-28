@@ -1,21 +1,33 @@
 # GeneApp
 
-To build for desktop
-Run the following commands in order.
+## FIles Structure
 
-### install cargo bundle
+### 📁 src/
+   - Contains all source code files
+   ##### 📄 main.rs
+      - The main application file
+   ##### 📄 repo.rs
+      - Contains helper function to interact with the database
+   ##### 📄 sql.rs
+      - Contains SQL string to interact with the database
+   ##### 📄 utils.rs
+      - Contains useful utilities for the application ( regex, etc)
 
-```bash 
-cargo install cargo-bundle
+### 📁 ui/
+   - Contains slint files for the UI
+
+### 📁 assets/
+   - Contains static files for the application i.e, images,...
+
+### 📁 migrations/
+   - Contains sql schema for the application
+
+
+## Devloping
+- Rust required
+
+```bash
+cargo run
 ```
 
-### build with cargo bundle
 
- This releases the application in 
- release mode with metadata specified in `cargo.toml` file.
-
-```bash 
-cargo bundle --release
-```
-
-Aftet build, check in directory `bundle` in `./target`

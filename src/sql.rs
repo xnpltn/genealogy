@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS relative (
     crazy           INTEGER DEFAULT 0,
     swarthy         INTEGER DEFAULT 0,
     employable      INTEGER DEFAULT 0,
+    default_image_id INTEGER,
     FOREIGN KEY (mother_id) REFERENCES relative(id),
     FOREIGN KEY (father_id) REFERENCES relative(id)
 );

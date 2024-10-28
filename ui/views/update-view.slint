@@ -86,43 +86,46 @@ export component UpdateView inherits Rectangle {
         y-pos: (root.height - self.height) / 2;
     }
 
-    VerticalLayout {
-        in-out property <bool> pinned: TableData.active-relative.pinned;
-        in-out property <int> swarthy;
-        in-out property <int> crazy;
-        in-out property <int> hotness;
-        in-out property <int> employable;
-        spacing: 16px;
-        padding: 24px;
+    ScrollView {
 
         HorizontalLayout {
-            spacing: 24px;
-            VerticalLayout {
-                height: 100%;
+            in-out property <bool> pinned: TableData.active-relative.pinned;
+            in-out property <int> swarthy: TableData.active-relative.swarthy;
+            in-out property <int> crazy: TableData.active-relative.crazy;
+            in-out property <int> hotness: TableData.active-relative.hotness;
+            in-out property <int> employable: TableData.active-relative.employable;
+            spacing: 16px;
+            padding: 24px;
+            HorizontalLayout {
                 width: 66%;
-                spacing: 20px;
-                Rectangle {
-                    height: 100%;
-                    background: Palette.color-scheme == ColorScheme.dark ? #24283b : #f8f9fc;
-                    border-radius: 12px;
-                    drop-shadow-color: Palette.color-scheme == ColorScheme.dark ? #00000040 : #0000001a;
-                    drop-shadow-offset-x: 0px;
-                    drop-shadow-offset-y: 4px;
-                    drop-shadow-blur: 12px;
-
-                    VerticalLayout {
-                        GroupBox {
-                            padding: 24px;
+                spacing: 24px;
+                VerticalLayout {
+                    spacing: 20px;
+                    Rectangle {
+                    //    height: 100%;
+                        background: Palette.color-scheme == ColorScheme.dark ? #24283b : #f8f9fc;
+                        border-radius: 12px;
+                        drop-shadow-color: Palette.color-scheme == ColorScheme.dark ? #00000040 : #0000001a;
+                        drop-shadow-offset-x: 0px;
+                        drop-shadow-offset-y: 4px;
+                        drop-shadow-blur: 12px;
+                        VerticalLayout {
+                            alignment: start;
+                            // GroupBox {
+                                padding: 24px;
                             VerticalLayout {
-                                spacing: 3px;
+                                spacing: 16px;
+                                alignment: start;
 
                                 HorizontalBox {
-                                    spacing: 3px;
+                                    height: 50px;
+                                    spacing: 12px;
                                     VerticalLayout {
+                                        spacing: 0;
                                         Text {
                                             text: "First Name";
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
@@ -136,8 +139,8 @@ export component UpdateView inherits Rectangle {
                                     VerticalLayout {
                                         Text {
                                             text: "Middle Name";
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
@@ -149,10 +152,11 @@ export component UpdateView inherits Rectangle {
                                     }
 
                                     VerticalLayout {
+                                        spacing: 0;
                                         Text {
                                             text: "Last Name";
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
@@ -165,13 +169,13 @@ export component UpdateView inherits Rectangle {
                                 }
 
                                 HorizontalBox {
-
-                                    spacing: 3px;
+                                    height: 50px;
+                                    spacing: 16px;
                                     VerticalLayout {
                                         Text {
                                             text: "Email";
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
@@ -185,22 +189,23 @@ export component UpdateView inherits Rectangle {
                                     VerticalLayout {
                                         Text {
                                             text: "Lost Reason";
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
                                         lost := ComboBox {
                                             height: 40px;
-                                            model: ["N/A", "Rejected By Family", "Other"];
+                                            model: ["N/A", "Not Human", "Rejected by Them", "Rejected By Family", "Other"];
+                                            current-value: TableData.active-relative.lost-reason;
                                         }
                                     }
 
                                     VerticalLayout {
                                         Text {
                                             text: "Sameness";
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
@@ -213,35 +218,34 @@ export component UpdateView inherits Rectangle {
                                 }
 
                                 HorizontalBox {
-                                    spacing: 3px;
+                                    height: 50px;
+                                    spacing: 16px;
                                     VerticalLayout {
                                         Text {
                                             text: "Sex";
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
                                         sex := ComboBox {
-                                            width: 25%;
                                             model: ["male", "female"];
-                                            current-value: TableData.active-relative.sex;
                                             height: 40px;
+                                            current-value: TableData.active-relative.sex;
                                         }
                                     }
 
                                     VerticalLayout {
                                         Text {
                                             text: "Birthday";
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
                                         birthday := LineEdit {
-                                            placeholder-text: "YYYY-MM-DD";
+                                            placeholder-text: "MMDDYYYY or MM-DD-YYYY";
                                             text: TableData.active-relative.birthday;
-                                            width: 25%;
                                             height: 40px;
                                         }
                                     }
@@ -249,15 +253,14 @@ export component UpdateView inherits Rectangle {
                                     VerticalLayout {
                                         Text {
                                             text: "Phone";
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
                                         phone := LineEdit {
                                             placeholder-text: "Phone";
                                             text: TableData.active-relative.phone;
-                                            width: 25%;
                                             height: 40px;
                                         }
                                     }
@@ -265,20 +268,19 @@ export component UpdateView inherits Rectangle {
 
                                 HorizontalBox {
                                     spacing: 3px;
-                                    alignment: center;
+                                    alignment: space-around;
                                     if sex.current-value == "male": VerticalLayout {
                                         Text {
                                             text: @tr("Employable | {}", ceil(e.value));
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
                                         e := Slider {
                                             minimum: 0;
                                             maximum: 10;
-                                            width: 15%;
-                                            height: 40px;
+                                            width: 300px;
                                             value: TableData.active-relative.employable;
                                             changed(val) => {
                                                 employable = ceil(val);
@@ -289,16 +291,15 @@ export component UpdateView inherits Rectangle {
                                     if sex.current-value == "female": VerticalLayout {
                                         Text {
                                             text: @tr("Hotness | {}", ceil(h.value));
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
                                         h := Slider {
                                             minimum: 0;
                                             maximum: 10;
-                                            width: 15%;
-                                            height: 40px;
+                                            width: 200px;
                                             value: TableData.active-relative.hotness;
                                             enabled: sex.current-value == sex.model[1];
                                             changed(val) => {
@@ -310,16 +311,15 @@ export component UpdateView inherits Rectangle {
                                     if sex.current-value == "female": VerticalLayout {
                                         Text {
                                             text: @tr("Swarthy | {}", ceil(s.value));
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
                                         s := Slider {
                                             minimum: 0;
                                             maximum: 10;
-                                            width: 15%;
-                                            height: 40px;
+                                            width: 200px;
                                             value: TableData.active-relative.swarthy;
                                             enabled: sex.current-value == sex.model[1];
                                             changed(val) => {
@@ -331,16 +331,15 @@ export component UpdateView inherits Rectangle {
                                     if sex.current-value == "female":VerticalLayout {
                                         Text {
                                             text: @tr("Crazy | {}", ceil(c.value));
-                                            font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            font-size: 14px;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
                                         c := Slider {
                                             minimum: 0;
                                             maximum: 10;
-                                            width: 25%;
-                                            height: 40px;
+                                            width: 200px;
                                             value: TableData.active-relative.crazy;
                                             enabled: sex.current-value == sex.model[1];
                                             changed(val) => {
@@ -356,13 +355,12 @@ export component UpdateView inherits Rectangle {
                                         Text {
                                             text: TableData.selected-mother-name != "" ? @tr("Update Mother | Current {}", TableData.selected-mother-name) : "Choose Mother";
                                             font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
                                         mother := ComboBox {
                                             model: TableData.females2;
-                                            height: 40px;
                                         }
                                     }
 
@@ -370,13 +368,12 @@ export component UpdateView inherits Rectangle {
                                         Text {
                                             text: TableData.selected-father-name != "" ? @tr("Update Father | Current {}", TableData.selected-father-name) : "Choose Father";
                                             font-size: 10px;
-                                            color: Palette.color-scheme == ColorScheme.dark ? #a9b1d6 : #64748b;
+                                            color: Palette.color-scheme == ColorScheme.dark ? white : black;
                                             font-weight: 500;
                                         }
 
                                         father := ComboBox {
                                             model: TableData.males;
-                                            height: 40px;
                                         }
                                     }
                                 }

@@ -4,7 +4,7 @@ import { UpdateView } from "views/update-view.slint";
 import { TabsView } from "views/tabs-view.slint";
 import { Palette, Button } from "std-widgets.slint";
 import { TableData, CrudMessages } from "types.slint";
-import { Switch, TextEdit, HorizontalBox } from "std-widgets.slint";
+import { Switch, TextEdit, HorizontalBox, ScrollView } from "std-widgets.slint";
 import { TaskBar } from "components/TaskBar.slint";
 import { MessagePopup } from "./components/message-popup.slint";
 
@@ -83,12 +83,13 @@ export component Main inherits Window {
                     }
 
                     CustomButton {
-                        title: "close";
+                        title: "Cancel";
                         background: orchid;
                         height: 30px;
                         width: 80px;
                         clicked => {
-                            note-pop-up.close()
+                            note-pop-up.close();
+                            note.text = "";
                         }
                     }
                 }
