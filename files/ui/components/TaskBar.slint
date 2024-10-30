@@ -1,0 +1,18 @@
+
+import { CustomButton } from "button.slint";
+import { TableData } from "../types.slint";
+import { Palette } from "std-widgets.slint";
+
+export component TaskBar inherits Rectangle {
+    callback close-popup();
+    in-out property <LayoutAlignment> alignment;
+    in-out property <length> h;
+    in-out property <color> color-light;
+    in-out property <color> color-dark;
+    height: h;
+    background: Palette.color-scheme == ColorScheme.dark ? color-dark : color-light;
+    HorizontalLayout {
+        alignment: alignment;
+        @children
+    }
+}

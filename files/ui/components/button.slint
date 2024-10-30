@@ -1,0 +1,28 @@
+import { Button } from "std-widgets.slint";
+
+export component CustomButton inherits Rectangle {
+    in property <string> title;
+    in property <brush> background-color;
+    in-out property <color> text-color: #fff;
+    callback clicked <=> touch.clicked;
+    height: 40px;
+    width: 120px;
+    border-radius: 5px;
+    background: background-color;
+
+    touch := TouchArea {
+        x: 0;
+        y: 0;
+        width: parent.width;
+        height: parent.height;
+    }
+
+    t := Text {
+        x: parent.width / 2 - self.width / 2;
+        y: parent.height / 2 - self.height / 2;
+        text: title;
+        font-size: 20px;
+        font-weight: 400;
+        color: text-color;
+    }
+}
